@@ -1,0 +1,37 @@
+cmake_minimum_required(
+   VERSION 3.19.4)
+
+project(
+   modern-font-render)
+
+set(
+   CMAKE_CXX_STANDARD
+   17)
+
+add_compile_options(
+   /MP
+   /permissive-)
+
+add_executable(
+   font-render
+   main.cpp
+   qt.conf)
+
+find_package(
+   Qt5
+   REQUIRED
+   COMPONENTS
+   Core
+   Gui
+   Widgets)
+find_package(
+   OpenGL
+   REQUIRED)
+
+target_link_libraries(
+   font-render
+   PRIVATE
+   Qt5::Core
+   Qt5::Gui
+   Qt5::Widgets
+   OpenGL::GL)
