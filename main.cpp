@@ -13,93 +13,95 @@
 //#include <ft2build.h>
 //#include <freetype/freetype.h>
 
-using FT_Module___ =
-   std::unique_ptr<
-      void,
-      int32_t (__stdcall *) ( void * ) >;
+#include "freetype.h"
 
-using FT_Instance = void *;
-using FT_Face = void *;
-
-template < typename T >
-T GetFuncAddress(
-   const char * const function,
-   void * const module,
-   T ) noexcept
-{
-   return
-      reinterpret_cast< T >(
-         GetProcAddress(
-            reinterpret_cast< const HMODULE >(module),
-            function));
-}
-
-struct FreeTypeLibrary
-{
-   FreeTypeLibrary(
-      void * const module ) :
-   init { GetFuncAddress("FT_Init_FreeType", module, init) },
-   uninit { GetFuncAddress("FT_Done_FreeType", module, uninit) },
-   version { GetFuncAddress("FT_Library_Version", module, version) },
-   new_face { GetFuncAddress("FT_New_Face", module, new_face) },
-   delete_face { GetFuncAddress("FT_Done_Face", module, delete_face) },
-   set_pixel_sizes { GetFuncAddress("FT_Set_Pixel_Sizes", module, set_pixel_sizes) },
-   load_char { GetFuncAddress("FT_Load_Char", module, load_char) }
-   {
-   }
-
-   int32_t (* const init) ( FT_Instance * );
-   int32_t (* const uninit) ( FT_Instance );
-   void (* const version) ( FT_Instance, int32_t *, int32_t *, int32_t * );
-   int32_t (* const new_face) ( FT_Instance, const char *, long, FT_Face * );
-   int32_t (* const delete_face) ( FT_Face );
-   int32_t (* const set_pixel_sizes) ( FT_Face, uint32_t, uint32_t );
-   int32_t (* const load_char) ( FT_Face, uint32_t, int32_t );
-
-};
-
-template < size_t OFFSET, typename T >
-T GetBitmapData(
-   const FT_Face ft_face ) noexcept
-{
-#if _WIN64
-   const size_t glyph_offset { 120 };
-   const size_t bitmap_offset { 104 };
-#else
-#error "Define for this platform type!"
-#endif
-
-   const uint8_t * const glyph =
-      reinterpret_cast< const uint8_t * >(
-         *reinterpret_cast< const size_t * >(
-            reinterpret_cast< const uint8_t * >(
-               ft_face) + glyph_offset));
-
-   return
-      *reinterpret_cast< const T * >(
-         glyph + bitmap_offset + OFFSET);
-}
-
-template < size_t OFFSET, typename T >
-T GetGlyphData(
-   const FT_Face ft_face ) noexcept
-{
-#if _WIN64
-   const size_t glyph_offset { 120 };
-#else
-#error "Define for this platform type!"
-#endif
-
-   const uint8_t * const glyph =
-      reinterpret_cast< const uint8_t * >(
-         *reinterpret_cast< const size_t * >(
-            reinterpret_cast< const uint8_t * >(
-               ft_face) + glyph_offset));
-
-   return
-      *reinterpret_cast< const T * >(
-         glyph + OFFSET);
-}
+//using FT_Module___ =
+//   std::unique_ptr<
+//      void,
+//      int32_t (__stdcall *) ( void * ) >;
+//
+//using FT_Instance = void *;
+//using FT_Face = void *;
+//
+//template < typename T >
+//T GetFuncAddress(
+//   const char * const function,
+//   void * const module,
+//   T ) noexcept
+//{
+//   return
+//      reinterpret_cast< T >(
+//         GetProcAddress(
+//            reinterpret_cast< const HMODULE >(module),
+//            function));
+//}
+//
+//struct FreeTypeLibrary
+//{
+//   FreeTypeLibrary(
+//      void * const module ) :
+//   init { GetFuncAddress("FT_Init_FreeType", module, init) },
+//   uninit { GetFuncAddress("FT_Done_FreeType", module, uninit) },
+//   version { GetFuncAddress("FT_Library_Version", module, version) },
+//   new_face { GetFuncAddress("FT_New_Face", module, new_face) },
+//   delete_face { GetFuncAddress("FT_Done_Face", module, delete_face) },
+//   set_pixel_sizes { GetFuncAddress("FT_Set_Pixel_Sizes", module, set_pixel_sizes) },
+//   load_char { GetFuncAddress("FT_Load_Char", module, load_char) }
+//   {
+//   }
+//
+//   int32_t (* const init) ( FT_Instance * );
+//   int32_t (* const uninit) ( FT_Instance );
+//   void (* const version) ( FT_Instance, int32_t *, int32_t *, int32_t * );
+//   int32_t (* const new_face) ( FT_Instance, const char *, long, FT_Face * );
+//   int32_t (* const delete_face) ( FT_Face );
+//   int32_t (* const set_pixel_sizes) ( FT_Face, uint32_t, uint32_t );
+//   int32_t (* const load_char) ( FT_Face, uint32_t, int32_t );
+//
+//};
+//
+//template < size_t OFFSET, typename T >
+//T GetBitmapData(
+//   const FT_Face ft_face ) noexcept
+//{
+//#if _WIN64
+//   const size_t glyph_offset { 120 };
+//   const size_t bitmap_offset { 104 };
+//#else
+//#error "Define for this platform type!"
+//#endif
+//
+//   const uint8_t * const glyph =
+//      reinterpret_cast< const uint8_t * >(
+//         *reinterpret_cast< const size_t * >(
+//            reinterpret_cast< const uint8_t * >(
+//               ft_face) + glyph_offset));
+//
+//   return
+//      *reinterpret_cast< const T * >(
+//         glyph + bitmap_offset + OFFSET);
+//}
+//
+//template < size_t OFFSET, typename T >
+//T GetGlyphData(
+//   const FT_Face ft_face ) noexcept
+//{
+//#if _WIN64
+//   const size_t glyph_offset { 120 };
+//#else
+//#error "Define for this platform type!"
+//#endif
+//
+//   const uint8_t * const glyph =
+//      reinterpret_cast< const uint8_t * >(
+//         *reinterpret_cast< const size_t * >(
+//            reinterpret_cast< const uint8_t * >(
+//               ft_face) + glyph_offset));
+//
+//   return
+//      *reinterpret_cast< const T * >(
+//         glyph + OFFSET);
+//}
 
 float scale { 1.0f };
 uint32_t glyph_max_height { 0 };
@@ -123,35 +125,42 @@ std::unique_ptr< glyph [] > glyphs;
 
 void font_test( )
 {
-   const FT_Module___ module {
-      LoadLibrary("freetyped.dll"),
-      reinterpret_cast< int32_t (__stdcall *) ( void * ) >(&FreeLibrary)
-   };
+   //const FT_Module___ module {
+   //   LoadLibrary("freetyped.dll"),
+   //   reinterpret_cast< int32_t (__stdcall *) ( void * ) >(&FreeLibrary)
+   //};
+   //
+   //FreeTypeLibrary library {
+   //   module.get()
+   //};
+   //
+   //FT_Instance ft_instance { nullptr };
+   //
+   //library.init(
+   //   &ft_instance);
+   //
+   //int32_t version[3] { };
+   //
+   //library.version(
+   //   ft_instance,
+   //   &version[0],
+   //   &version[1],
+   //   &version[2]);
+   //
+   //FT_Face ft_face { nullptr };
 
-   FreeTypeLibrary library {
-      module.get()
-   };
-
-   FT_Instance ft_instance { nullptr };
-
-   library.init(
-      &ft_instance);
-
-   int32_t version[3] { };
-
-   library.version(
-      ft_instance,
-      &version[0],
-      &version[1],
-      &version[2]);
-
-   FT_Face ft_face { nullptr };
+   auto freetype =
+      opengl::FreeType::Create();
 
    const char * const fonts[] {
-      "c:/windows/fonts/arial.ttf",
-      "c:/windows/fonts/itcedscr.ttf",
-      "c:/windows/fonts/bradhitc.ttf",
-      "c:/windows/fonts/consola.ttf"
+      //"c:/windows/fonts/arial.ttf",
+      //"c:/windows/fonts/itcedscr.ttf",
+      //"c:/windows/fonts/bradhitc.ttf",
+      //"c:/windows/fonts/consola.ttf"
+      "arial.ttf",
+      "itcedscr.ttf",
+      "bradhitc.ttf",
+      "consola.ttf"
    };
 
    size_t index =
@@ -160,16 +169,22 @@ void font_test( )
          static_cast< size_t >(0),
          std::size(fonts) - 1);
 
-   library.new_face(
-      ft_instance,
-      fonts[index],
-      0,
-      &ft_face);
+   freetype->SetFont(
+      fonts[index]);
 
-   library.set_pixel_sizes(
-      ft_face,
-      0,
+   //library.new_face(
+   //   ft_instance,
+   //   fonts[index],
+   //   0,
+   //   &ft_face);
+
+   freetype->SetSize(
       size);
+
+   //library.set_pixel_sizes(
+   //   ft_face,
+   //   0,
+   //   size);
 
    glyph_max_height = 0;
 
@@ -185,29 +200,39 @@ void font_test( )
 
    for (uint32_t i { 32 }; 127u > i; ++i)
    {
-      library.load_char(
-         ft_face,
-         i,
-         1 << 2);
+      //library.load_char(
+      //   ft_face,
+      //   i,
+      //   1 << 2);
+      const auto glyph =
+         freetype->GetGlyph(
+            i);
 
-      glyphs[i].height =
-         GetBitmapData< 0, uint32_t >(
-            ft_face);
-      glyphs[i].width =
-         GetBitmapData< 4, uint32_t >(
-            ft_face);
-      const auto buffer =
-         GetBitmapData< 16, const uint8_t * >(
-            ft_face);
-      glyphs[i].left =
-         GetGlyphData< 144, int32_t >(
-            ft_face);
-      glyphs[i].top =
-         GetGlyphData< 148, int32_t >(
-            ft_face);
-      glyphs[i].advance =
-         GetGlyphData< 88, int32_t >(
-            ft_face) / 64.0;
+      glyphs[i].height = glyph->height;
+      glyphs[i].width = glyph->width;
+      const auto buffer = glyph->bitmap.data();
+      glyphs[i].left = glyph->left;
+      glyphs[i].top = glyph->top;
+      glyphs[i].advance = glyph->advance;
+
+      //glyphs[i].height =
+      //   GetBitmapData< 0, uint32_t >(
+      //      ft_face);
+      //glyphs[i].width =
+      //   GetBitmapData< 4, uint32_t >(
+      //      ft_face);
+      //const auto buffer =
+      //   GetBitmapData< 16, const uint8_t * >(
+      //      ft_face);
+      //glyphs[i].left =
+      //   GetGlyphData< 144, int32_t >(
+      //      ft_face);
+      //glyphs[i].top =
+      //   GetGlyphData< 148, int32_t >(
+      //      ft_face);
+      //glyphs[i].advance =
+      //   GetGlyphData< 88, int32_t >(
+      //      ft_face) / 64.0;
 
       const auto width =
          glyphs[i].width;
@@ -260,11 +285,11 @@ void font_test( )
             height);
    }
 
-   library.delete_face(
-      ft_face);
-
-   library.uninit(
-      ft_instance);
+   //library.delete_face(
+   //   ft_face);
+   //
+   //library.uninit(
+   //   ft_instance);
 }
 //////////////////////////////////////////////////////////////////
 

@@ -8,12 +8,23 @@ set(
    CMAKE_CXX_STANDARD
    17)
 
-add_compile_options(
-   /MP
-   /permissive-)
+if (WIN32)
+   add_compile_options(
+      /MP
+      /permissive-)
+endif ( )
 
 add_executable(
    font-render
+   font_engine.h
+   font_engine_default.cpp
+   font_engine_default.h
+   font_engine_factory.cpp
+   font_engine_factory.h
+   font_engine_freetype.cpp
+   font_engine_freetype.h
+   freetype.cpp
+   freetype.h
    main.cpp
    qt.conf)
 
