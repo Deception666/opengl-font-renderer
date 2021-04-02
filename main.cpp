@@ -11,7 +11,19 @@
 #include <QtGui/QKeyEvent>
 
 //#include <ft2build.h>
-//#include <freetype/freetype.h>
+#include <freetype/freetype.h>
+
+#if _WIN32
+
+#if _M_IX86
+#define CALL_CONV __stdcall
+#elif _M_X64
+#define CALL_CONV
+#else
+#define "Define for this platform type!"
+#endif
+
+#endif // _WIN32
 
 #include "freetype.h"
 
@@ -299,7 +311,7 @@ class OpenGLWidget :
 public:
 
    std::string string;
-   virtual void keyReleaseEvent(QKeyEvent *event)
+   virtual void keyPressEvent(QKeyEvent *event) override
    {
       if ((event->key() == Qt::Key::Key_Plus ||
            event->key() == Qt::Key::Key_Minus) &&
@@ -491,7 +503,7 @@ void OpenGLWidget::paintGL( )
       glPixelStorei(
          GL_UNPACK_ALIGNMENT,
          4);
-      reinterpret_cast< void (*) ( GLenum ) >(
+      reinterpret_cast< void (CALL_CONV *) ( GLenum ) >(
          wglGetProcAddress("glGenerateMipmap"))(
             GL_TEXTURE_2D);
       glTexParameteri(

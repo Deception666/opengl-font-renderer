@@ -35,7 +35,8 @@ T GetBitmapData(
 #if _WIN32
 
 #if _M_IX86
-#define "Define for this platform type!"
+   const size_t glyph_offset { 84 };
+   const size_t bitmap_offset { 76 };
 #elif _M_X64
    const size_t glyph_offset { 120 };
    const size_t bitmap_offset { 104 };
@@ -65,7 +66,7 @@ T GetGlyphData(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t glyph_offset { 84 };
 #elif _M_X64
    const size_t glyph_offset { 120 };
 #else
@@ -343,11 +344,11 @@ uint32_t FreeType::GetBitmapWidth(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t BITMAP_WIDTH_OFFSET { 4 };
 #elif _M_X64
    const size_t BITMAP_WIDTH_OFFSET { 4 };
 #else
-#error "Define for this platform type!"
+   #error "Define for this platform type!"
 #endif // _M_IX86
 
 #else
@@ -369,7 +370,7 @@ uint32_t FreeType::GetBitmapHeight(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t BITMAP_HEIGHT_OFFSET { 0 };
 #elif _M_X64
    const size_t BITMAP_HEIGHT_OFFSET { 0 };
 #else
@@ -395,7 +396,7 @@ const uint8_t * FreeType::GetBitmapData(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t BITMAP_DATA_OFFSET { 12 };
 #elif _M_X64
    const size_t BITMAP_DATA_OFFSET { 16 };
 #else
@@ -421,7 +422,7 @@ int32_t FreeType::GetGlyphTop(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t GLYPH_TOP_OFFSET { 104 };
 #elif _M_X64
    const size_t GLYPH_TOP_OFFSET { 148 };
 #else
@@ -447,7 +448,7 @@ int32_t FreeType::GetGlyphLeft(
 #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t GLYPH_LEFT_OFFSET { 100 };
 #elif _M_X64
    const size_t GLYPH_LEFT_OFFSET { 144 };
 #else
@@ -473,7 +474,7 @@ double FreeType::GetGlyphAdvance(
    #if _WIN32
 
 #if _M_IX86
-#error "Define for this platform type!"
+   const size_t GLYPH_ADVANCE_OFFSET { 64 };
 #elif _M_X64
    const size_t GLYPH_ADVANCE_OFFSET { 88 };
 #else
