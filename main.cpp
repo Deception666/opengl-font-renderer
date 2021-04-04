@@ -11,7 +11,7 @@
 #include <QtGui/QKeyEvent>
 
 //#include <ft2build.h>
-#include <freetype/freetype.h>
+//#include <freetype/freetype.h>
 
 #if _WIN32
 
@@ -25,7 +25,8 @@
 
 #endif // _WIN32
 
-#include "freetype.h"
+//#include "freetype.h"
+#include "font_engine_freetype.h"
 
 //using FT_Module___ =
 //   std::unique_ptr<
@@ -116,24 +117,30 @@
 //}
 
 float scale { 1.0f };
-uint32_t glyph_max_height { 0 };
+//int32_t glyph_max_top { -5000 };
+//uint32_t glyph_max_height { 0 };
 uint32_t size { 48 };
-uint32_t tex_width { 2048 }, tex_height { 2048 };
+//uint32_t tex_width { 2048 }, tex_height { 2048 };
 size_t font_index { 0 };
-std::unique_ptr< uint8_t [] > texture;
+//std::unique_ptr< uint8_t [] > texture;
 
-struct glyph
-{
-   uint32_t width;
-   uint32_t height;
-   int32_t top;
-   int32_t left;
-   double advance;
-   float uv_ll[2];
-   float uv_ur[2];
-};
+//struct glyph
+//{
+//   uint32_t width;
+//   uint32_t height;
+//   int32_t top;
+//   int32_t left;
+//   double advance;
+//   float uv_ll[2];
+//   float uv_ur[2];
+//};
+//
+//std::unique_ptr< glyph [] > glyphs;
 
-std::unique_ptr< glyph [] > glyphs;
+std::unique_ptr< opengl::FontEngineFreeType >
+   freetype_font_engine;
+opengl::FontEngineFreeType::TextureMap
+   font_engine_texture_map;
 
 void font_test( )
 {
@@ -161,8 +168,15 @@ void font_test( )
    //
    //FT_Face ft_face { nullptr };
 
-   auto freetype =
-      opengl::FreeType::Create();
+   //auto freetype =
+   //   opengl::FreeType::Create();
+   
+   if (!freetype_font_engine)
+   {
+      freetype_font_engine =
+         std::make_unique< opengl::FontEngineFreeType >();
+      freetype_font_engine->Initialize();
+   }
 
    const char * const fonts[] {
       //"c:/windows/fonts/arial.ttf",
@@ -181,7 +195,9 @@ void font_test( )
          static_cast< size_t >(0),
          std::size(fonts) - 1);
 
-   freetype->SetFont(
+   //freetype->SetFont(
+   //   fonts[index]);
+   freetype_font_engine->SetFont(
       fonts[index]);
 
    //library.new_face(
@@ -190,7 +206,9 @@ void font_test( )
    //   0,
    //   &ft_face);
 
-   freetype->SetSize(
+   //freetype->SetSize(
+   //   size);
+   freetype_font_engine->SetSize(
       size);
 
    //library.set_pixel_sizes(
@@ -198,104 +216,109 @@ void font_test( )
    //   0,
    //   size);
 
-   glyph_max_height = 0;
+   //glyph_max_top = 0;
+   //glyph_max_height = 0;
 
-   uint32_t current_row { };
-   uint32_t current_height { };
-   uint32_t next_line { };
+   //uint32_t current_row { };
+   //uint32_t current_height { };
+   //uint32_t next_line { };
 
-   texture.reset(
-      new uint8_t[tex_width * tex_height] { });
+   //texture.reset(
+   //   new uint8_t[tex_width * tex_height] { });
 
-   glyphs.reset(
-      new glyph[128] { });
+   //glyphs.reset(
+   //   new glyph[128] { });
 
-   for (uint32_t i { 32 }; 127u > i; ++i)
-   {
-      //library.load_char(
-      //   ft_face,
-      //   i,
-      //   1 << 2);
-      const auto glyph =
-         freetype->GetGlyph(
-            i);
-
-      glyphs[i].height = glyph->height;
-      glyphs[i].width = glyph->width;
-      const auto buffer = glyph->bitmap.data();
-      glyphs[i].left = glyph->left;
-      glyphs[i].top = glyph->top;
-      glyphs[i].advance = glyph->advance;
-
-      //glyphs[i].height =
-      //   GetBitmapData< 0, uint32_t >(
-      //      ft_face);
-      //glyphs[i].width =
-      //   GetBitmapData< 4, uint32_t >(
-      //      ft_face);
-      //const auto buffer =
-      //   GetBitmapData< 16, const uint8_t * >(
-      //      ft_face);
-      //glyphs[i].left =
-      //   GetGlyphData< 144, int32_t >(
-      //      ft_face);
-      //glyphs[i].top =
-      //   GetGlyphData< 148, int32_t >(
-      //      ft_face);
-      //glyphs[i].advance =
-      //   GetGlyphData< 88, int32_t >(
-      //      ft_face) / 64.0;
-
-      const auto width =
-         glyphs[i].width;
-      const auto height =
-         glyphs[i].height;
-
-      if (current_row + width >= tex_width)
-      {
-         current_row = 0;
-         current_height = next_line + 5;
-      }
-      
-      if (current_height + height >= tex_height)
-      {
-         break;
-      }
-
-      for (uint32_t i { }; height > i; ++i)
-      {
-         std::copy(
-            buffer + width * (height - i - 1),
-            buffer + width * (height - i),
-            (texture.get() + (current_height + i) * tex_width + current_row));
-      }
-
-      glyphs[i].uv_ll[0] =
-         static_cast< double >(current_row) /
-         static_cast< double >(tex_width - 1);
-      glyphs[i].uv_ll[1] =
-         static_cast< double >(current_height) /
-         static_cast< double >(tex_width - 1);
-
-      glyphs[i].uv_ur[0] =
-         static_cast< double >(current_row + width) /
-         static_cast< double >(tex_width - 1);
-      glyphs[i].uv_ur[1] =
-         static_cast< double >(current_height + height) /
-         static_cast< double >(tex_width - 1);
-
-      current_row += width + 5;
-
-      next_line =
-         std::max(
-            next_line,
-            current_height + height);
-
-      glyph_max_height =
-         std::max(
-            glyph_max_height,
-            height);
-   }
+   //for (uint32_t i { 32 }; 127u > i; ++i)
+   //{
+   //   //library.load_char(
+   //   //   ft_face,
+   //   //   i,
+   //   //   1 << 2);
+   //   const auto glyph =
+   //      freetype->GetGlyph(
+   //         i);
+   //
+   //   glyphs[i].height = glyph->height;
+   //   glyphs[i].width = glyph->width;
+   //   const auto buffer = glyph->bitmap.data();
+   //   glyphs[i].left = glyph->left;
+   //   glyphs[i].top = glyph->top;
+   //   glyphs[i].advance = glyph->advance;
+   //
+   //   //glyphs[i].height =
+   //   //   GetBitmapData< 0, uint32_t >(
+   //   //      ft_face);
+   //   //glyphs[i].width =
+   //   //   GetBitmapData< 4, uint32_t >(
+   //   //      ft_face);
+   //   //const auto buffer =
+   //   //   GetBitmapData< 16, const uint8_t * >(
+   //   //      ft_face);
+   //   //glyphs[i].left =
+   //   //   GetGlyphData< 144, int32_t >(
+   //   //      ft_face);
+   //   //glyphs[i].top =
+   //   //   GetGlyphData< 148, int32_t >(
+   //   //      ft_face);
+   //   //glyphs[i].advance =
+   //   //   GetGlyphData< 88, int32_t >(
+   //   //      ft_face) / 64.0;
+   //
+   //   const auto width =
+   //      glyphs[i].width;
+   //   const auto height =
+   //      glyphs[i].height;
+   //
+   //   if (current_row + width >= tex_width)
+   //   {
+   //      current_row = 0;
+   //      current_height = next_line + 5;
+   //   }
+   //   
+   //   if (current_height + height >= tex_height)
+   //   {
+   //      break;
+   //   }
+   //
+   //   for (uint32_t i { }; height > i; ++i)
+   //   {
+   //      std::copy(
+   //         buffer + width * (height - i - 1),
+   //         buffer + width * (height - i),
+   //         (texture.get() + (current_height + i) * tex_width + current_row));
+   //   }
+   //
+   //   glyphs[i].uv_ll[0] =
+   //      static_cast< double >(current_row) /
+   //      static_cast< double >(tex_width - 1);
+   //   glyphs[i].uv_ll[1] =
+   //      static_cast< double >(current_height) /
+   //      static_cast< double >(tex_width - 1);
+   //
+   //   glyphs[i].uv_ur[0] =
+   //      static_cast< double >(current_row + width) /
+   //      static_cast< double >(tex_width - 1);
+   //   glyphs[i].uv_ur[1] =
+   //      static_cast< double >(current_height + height) /
+   //      static_cast< double >(tex_width - 1);
+   //
+   //   current_row += width + 5;
+   //
+   //   next_line =
+   //      std::max(
+   //         next_line,
+   //         current_height + height);
+   //
+   //   glyph_max_height =
+   //      std::max(
+   //         glyph_max_height,
+   //         height);
+   //   glyph_max_top =
+   //      std::max(
+   //         glyph_max_top,
+   //         glyph->top);
+   //}
 
    //library.delete_face(
    //   ft_face);
@@ -358,6 +381,8 @@ public:
             event->text().toInt();
 
          font_test();
+
+         update();
       }
       else if (event->key() == Qt::Key::Key_Return)
       {
@@ -411,6 +436,8 @@ void RenderText(
    const float y,
    const float scale )
 {
+   if (!freetype_font_engine) return;
+
    const char * s { text };
    const char * const e { text + std::strlen(text) };
 
@@ -429,39 +456,54 @@ void RenderText(
    {
       const int8_t c { *s };
 
-      const auto & g =
-         glyphs[c];
+      const auto g =
+         //glyphs[c];
+         freetype_font_engine->GetGlyphMetric(
+            c);
+      
 
       if (c == '\n')
       {
          pen_x = 0;
-         pen_y -= glyph_max_height + 5.0;
+         pen_y -= freetype_font_engine->GetLineHeight()/* + 5*/;
       }
       else
       {
          if (c != ' ')
          {
             const float x =
-               pen_x + g.left;
+               pen_x + g->left;
             const float y =
-               pen_y - (static_cast< float >(g.height) - g.top);
-
-            glTexCoord2f(g.uv_ll[0], g.uv_ur[1]);
-            glVertex3f(x, y + g.height, 0.0f);
-            glTexCoord2f(g.uv_ll[0], g.uv_ll[1]);
+               pen_y - (static_cast< float >(g->height) - g->top);
+            
+            glTexCoord2f(
+               g->tex_coords.normalized.left,
+               g->tex_coords.normalized.top);
+            glVertex3f(x, y + g->height, 0.0f);
+            glTexCoord2f(
+               g->tex_coords.normalized.left,
+               g->tex_coords.normalized.bottom);
             glVertex3f(x, y, 0.0f);
-            glTexCoord2f(g.uv_ur[0], g.uv_ll[1]);
-            glVertex3f(x + g.width, y, 0.0f);
+            glTexCoord2f(
+               g->tex_coords.normalized.right,
+               g->tex_coords.normalized.bottom);
+            glVertex3f(x + g->width, y, 0.0f);
 
-            glTexCoord2f(g.uv_ll[0], g.uv_ur[1]);
-            glVertex3f(x, y + g.height, 0.0f);
-            glTexCoord2f(g.uv_ur[0], g.uv_ll[1]);
-            glVertex3f(x + g.width, y, 0.0f);
-            glTexCoord2f(g.uv_ur[0], g.uv_ur[1]);
-            glVertex3f(x + g.width, y + g.height, 0.0f);
+            glTexCoord2f(
+               g->tex_coords.normalized.left,
+               g->tex_coords.normalized.top);
+            glVertex3f(x, y + g->height, 0.0f);
+            glTexCoord2f(
+               g->tex_coords.normalized.right,
+               g->tex_coords.normalized.bottom);
+            glVertex3f(x + g->width, y, 0.0f);
+            glTexCoord2f(
+               g->tex_coords.normalized.right,
+               g->tex_coords.normalized.top);
+            glVertex3f(x + g->width, y + g->height, 0.0f);
          }
 
-         pen_x += g.advance;
+         pen_x += g->advance;
       }
    }
 
@@ -474,8 +516,16 @@ void OpenGLWidget::paintGL( )
 {
    static uint32_t tid { 0 };
 
-   if (texture)
+   if (font_engine_texture_map.texture_map.expired())
    {
+      font_engine_texture_map =
+         freetype_font_engine->GetGlyphTextureMap();
+
+      auto tex_map =
+         font_engine_texture_map.texture_map.lock();
+
+      if (!tex_map) return;
+
       if (tid)
          glDeleteTextures(
             1,
@@ -494,12 +544,12 @@ void OpenGLWidget::paintGL( )
          GL_TEXTURE_2D,
          0,
          GL_LUMINANCE,
-         tex_width,
-         tex_height,
+         font_engine_texture_map.width,
+         font_engine_texture_map.height,
          0,
          GL_RED,
          GL_UNSIGNED_BYTE,
-         texture.get());
+         tex_map.get());
       glPixelStorei(
          GL_UNPACK_ALIGNMENT,
          4);
@@ -525,7 +575,7 @@ void OpenGLWidget::paintGL( )
       glBindTexture(
          GL_TEXTURE_2D,
          tid);
-      texture.reset();
+      //texture.reset();
 
       assert(glGetError() == GL_NO_ERROR);
    }
@@ -555,14 +605,14 @@ void OpenGLWidget::paintGL( )
       tid);
 
    const std::string s {
-      "scale: " + std::to_string(scale) + "\n"
+      /*"scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
-      + string
+      +*/ string
    };
 
    RenderText(
       s.c_str(),
-      0.0f, height() - glyph_max_height * scale,
+      0.0f, height() - freetype_font_engine->GetGlyphMaxTop() * scale,
       scale);
 
    //glBegin(
@@ -590,6 +640,9 @@ void OpenGLWidget::paintGL( )
 
    glDisable(
       GL_BLEND);
+
+   if (font_engine_texture_map.texture_map.expired())
+      update();
 }
 
 int32_t main(

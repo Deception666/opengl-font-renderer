@@ -176,11 +176,19 @@ bool FreeType::SetFont(
 
          glyphs_.clear();
 
+         font_filename_ = font_filename;
+
          set = true;
       }
    }
 
    return set;
+}
+
+const std::string & FreeType::GetFont( ) const noexcept
+{
+   return
+      font_filename_;
 }
 
 bool FreeType::SetSize(
@@ -206,8 +214,7 @@ bool FreeType::SetSize(
    return set;
 }
 
-uint32_t FreeType::GetSize(
-   const uint32_t size ) const noexcept
+uint32_t FreeType::GetSize( ) const noexcept
 {
    return size_;
 }
