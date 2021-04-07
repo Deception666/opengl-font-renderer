@@ -3,8 +3,6 @@
 #include "font_engine_default.h"
 #include "font_engine_freetype.h"
 
-#include <vector>
-
 namespace opengl {
 namespace font_engine_factory {
 
@@ -13,6 +11,9 @@ std::vector<
    font_engines_ {
       static_cast< size_t >(FontEngineType::MAX_TYPES),
       std::shared_ptr< FontEngine >::weak_type { } };
+
+std::vector< uint32_t >
+   default_character_set_;
 
 std::shared_ptr< FontEngine >
 CreateFontEngine(
@@ -86,6 +87,13 @@ ConstructFontEngine(
 
    return
       font_engine;
+}
+
+void SetDefaultCharacterSet(
+   std::vector< uint32_t > character_set ) noexcept
+{
+   default_character_set_.swap(
+      character_set);
 }
 
 }} // namespace opengl::font_engine_factory

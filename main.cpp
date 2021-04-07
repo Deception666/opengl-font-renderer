@@ -26,6 +26,7 @@
 #endif // _WIN32
 
 //#include "freetype.h"
+#include "font_engine_factory.h"
 #include "font_engine_freetype.h"
 
 //using FT_Module___ =
@@ -137,10 +138,11 @@ size_t font_index { 0 };
 //
 //std::unique_ptr< glyph [] > glyphs;
 
-std::unique_ptr< opengl::FontEngineFreeType >
+std::shared_ptr< opengl::FontEngine >
    freetype_font_engine;
 opengl::FontEngineFreeType::TextureMap
    font_engine_texture_map;
+std::vector< uint32_t > default_char_set_;
 
 void font_test( )
 {
@@ -171,11 +173,12 @@ void font_test( )
    //auto freetype =
    //   opengl::FreeType::Create();
    
+   static bool init { true };
    if (!freetype_font_engine)
    {
       freetype_font_engine =
-         std::make_unique< opengl::FontEngineFreeType >();
-      freetype_font_engine->Initialize();
+         opengl::font_engine_factory::ConstructFontEngine(
+            opengl::font_engine_factory::FontEngineType::FREETYPE);
    }
 
    const char * const fonts[] {
@@ -210,6 +213,16 @@ void font_test( )
    //   size);
    freetype_font_engine->SetSize(
       size);
+
+   if (init)
+   {
+      init = false;
+
+      for (auto c : default_char_set_)
+      {
+         freetype_font_engine->GetGlyphMetric(c);
+      }
+   }
 
    //library.set_pixel_sizes(
    //   ft_face,
@@ -456,19 +469,18 @@ void RenderText(
    {
       const int8_t c { *s };
 
-      const auto g =
-         //glyphs[c];
-         freetype_font_engine->GetGlyphMetric(
-            c);
-      
-
       if (c == '\n')
       {
          pen_x = 0;
-         pen_y -= freetype_font_engine->GetLineHeight()/* + 5*/;
+         pen_y -= freetype_font_engine->GetLineHeight()+ 2;
       }
       else
       {
+         const auto g =
+         //glyphs[c];
+         freetype_font_engine->GetGlyphMetric(
+            c);
+
          if (c != ' ')
          {
             const float x =
@@ -605,9 +617,9 @@ void OpenGLWidget::paintGL( )
       tid);
 
    const std::string s {
-      /*"scale: " + std::to_string(scale) + "\n"
+      "scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
-      +*/ string
+      + string
    };
 
    RenderText(
@@ -656,6 +668,17 @@ int32_t main(
       argc_,
       argv_
    };
+
+   std::vector< uint32_t > default_char_set(
+      127 - 32,
+      0u);
+   std::iota(
+      default_char_set.begin(),
+      default_char_set.end(),
+      32u);
+   default_char_set_ = default_char_set;
+   opengl::font_engine_factory::SetDefaultCharacterSet(
+      default_char_set);
 
    font_test();
 
