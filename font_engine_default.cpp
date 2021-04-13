@@ -57,9 +57,9 @@ int32_t FontEngineDefault::GetGlyphMaxTop( ) const noexcept
    return int32_t();
 }
 
-uint32_t FontEngineDefault::GetLineHeight( ) const noexcept
+double FontEngineDefault::GetVerticalAdvance( ) const noexcept
 {
-   return uint32_t();
+   return double();
 }
 
 const FontEngine::Metric * FontEngineDefault::GetGlyphMetric(

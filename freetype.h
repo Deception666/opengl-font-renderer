@@ -46,6 +46,8 @@ public:
    const Glyph * GetGlyph(
       const uint32_t character ) noexcept;
 
+   double GetGlobalGlyphHeight( ) const noexcept;
+
 private:
    FreeType(
       FT_Module module );
@@ -65,6 +67,12 @@ private:
    int32_t GetGlyphLeft(
       const FT_Face::pointer face ) const noexcept;
    double GetGlyphAdvance(
+      const FT_Face::pointer face ) const noexcept;
+   uint16_t GetFaceUnitsPerEM(
+      const FT_Face::pointer face ) const noexcept;
+   int16_t GetFaceAscender(
+      const FT_Face::pointer face ) const noexcept;
+   int16_t GetFaceDescender(
       const FT_Face::pointer face ) const noexcept;
 
    int32_t (* const init_) ( FT_Instance::pointer * );

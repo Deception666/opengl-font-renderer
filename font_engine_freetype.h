@@ -36,7 +36,7 @@ public:
    virtual uint32_t GetGlyphMaxWidth( ) const noexcept override;
    virtual uint32_t GetGlyphMaxHeight( ) const noexcept override;
    virtual int32_t GetGlyphMaxTop( ) const noexcept override;
-   virtual uint32_t GetLineHeight( ) const noexcept override;
+   virtual double GetVerticalAdvance( ) const noexcept override;
 
    virtual const Metric * GetGlyphMetric(
       const uint32_t character ) noexcept override;
@@ -57,7 +57,6 @@ private:
       uint32_t glyph_max_height { };
       uint32_t glyph_max_width { };
       int32_t glyph_max_top { };
-      uint32_t line_height { };
 
       uint32_t current_row { };
       uint32_t current_column { };

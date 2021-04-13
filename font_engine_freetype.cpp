@@ -128,10 +128,12 @@ int32_t FontEngineFreeType::GetGlyphMaxTop( ) const noexcept
       metric_data_.glyph_max_top;
 }
 
-uint32_t FontEngineFreeType::GetLineHeight( ) const noexcept
+double FontEngineFreeType::GetVerticalAdvance( ) const noexcept
 {
    return
-      metric_data_.line_height;
+      freetype_ ?
+      freetype_->GetGlobalGlyphHeight() :
+      0.0;
 }
 
 const FontEngine::Metric * FontEngineFreeType::GetGlyphMetric(
@@ -263,11 +265,6 @@ FontEngineFreeType::GenerateTextureCoords(
          std::max(
             glyph_top,
             metric_data.glyph_max_top);
-
-      metric_data.line_height =
-         std::max(
-            metric_data.line_height,
-            metric_data.glyph_max_height + glyph_height - glyph_top);
    }
 
    return

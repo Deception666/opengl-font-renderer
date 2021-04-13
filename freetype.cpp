@@ -88,6 +88,19 @@ T GetGlyphData(
          glyph + OFFSET);
 }
 
+template < size_t OFFSET, typename T >
+T GetFaceData(
+   const FT_Face::pointer ft_face ) noexcept
+{
+   const uint8_t * const face =
+      reinterpret_cast< const uint8_t * >(
+         ft_face);
+
+   return
+      *reinterpret_cast< const T * >(
+         face + OFFSET);
+}
+
 std::shared_ptr< FreeType >
 FreeType::Create( ) noexcept
 {
@@ -288,6 +301,32 @@ const FreeType::Glyph * FreeType::GetGlyph(
    return glyph_ptr;
 }
 
+double FreeType::GetGlobalGlyphHeight( ) const noexcept
+{
+   double global_glyph_height { 0.0 };
+
+   if (face_)
+   {
+      const auto units_per_em =
+         GetFaceUnitsPerEM(face_.get());
+
+      if (units_per_em)
+      {
+         const auto ascender =
+            GetFaceAscender(face_.get());
+         const auto descender =
+            GetFaceDescender(face_.get());
+
+         global_glyph_height =
+            static_cast< double >(ascender - descender) *
+            GetSize() / units_per_em;
+      }
+   }
+
+   return
+      global_glyph_height;
+}
+
 FreeType::FreeType(
    FT_Module module ) :
 init_ { GetFuncAddress("FT_Init_FreeType", module.get(), init_) },
@@ -478,7 +517,7 @@ int32_t FreeType::GetGlyphLeft(
 double FreeType::GetGlyphAdvance(
    const FT_Face::pointer face ) const noexcept
 {
-   #if _WIN32
+#if _WIN32
 
 #if _M_IX86
    const size_t GLYPH_ADVANCE_OFFSET { 64 };
@@ -499,6 +538,87 @@ double FreeType::GetGlyphAdvance(
          int32_t >(
             face) / 64.0 :
       0.0;
+}
+
+uint16_t FreeType::GetFaceUnitsPerEM(
+   const FT_Face::pointer face ) const noexcept
+{
+#if _WIN32
+
+#if _M_IX86
+   const size_t FACE_UNITS_PER_EM_OFFSET { 64 };
+   #error "Define for this platform type!"
+#elif _M_X64
+   const size_t FACE_UNITS_PER_EM_OFFSET { 104 };
+#else
+#error "Define for this platform type!"
+#endif // _M_IX86
+
+#else
+#error "Define for this platform type!"
+#endif // _WIN32
+
+   return
+      face ?
+      opengl::GetFaceData<
+         FACE_UNITS_PER_EM_OFFSET,
+         uint16_t >(
+            face) :
+      0;
+}
+
+int16_t FreeType::GetFaceAscender(
+   const FT_Face::pointer face ) const noexcept
+{
+#if _WIN32
+
+#if _M_IX86
+   const size_t FACE_ASCENDER_OFFSET { 64 };
+   #error "Define for this platform type!"
+#elif _M_X64
+   const size_t FACE_ASCENDER_OFFSET { 106 };
+#else
+#error "Define for this platform type!"
+#endif // _M_IX86
+
+#else
+#error "Define for this platform type!"
+#endif // _WIN32
+
+   return
+      face ?
+      opengl::GetFaceData<
+         FACE_ASCENDER_OFFSET,
+         int16_t >(
+            face) :
+      0;
+}
+
+int16_t FreeType::GetFaceDescender(
+   const FT_Face::pointer face ) const noexcept
+{
+#if _WIN32
+
+#if _M_IX86
+   const size_t FACE_DESCENDER_OFFSET { 64 };
+   #error "Define for this platform type!"
+#elif _M_X64
+   const size_t FACE_DESCENDER_OFFSET { 108 };
+#else
+#error "Define for this platform type!"
+#endif // _M_IX86
+
+#else
+#error "Define for this platform type!"
+#endif // _WIN32
+
+   return
+      face ?
+      opengl::GetFaceData<
+         FACE_DESCENDER_OFFSET,
+         int16_t >(
+            face) :
+      0;
 }
 
 } // namespace opengl

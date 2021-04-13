@@ -10,8 +10,8 @@
 
 #include <QtGui/QKeyEvent>
 
-//#include <ft2build.h>
-//#include <freetype/freetype.h>
+#include <ft2build.h>
+#include <freetype/freetype.h>
 
 #if _WIN32
 
@@ -456,8 +456,8 @@ void RenderText(
 
    glPushMatrix();
 
+   glTranslatef(x, y, 0);
    glScalef(scale, scale, 1.0);
-   glTranslatef(x / scale, y / scale, 0);
 
    glBegin(
       GL_TRIANGLES);
@@ -472,7 +472,7 @@ void RenderText(
       if (c == '\n')
       {
          pen_x = 0;
-         pen_y -= freetype_font_engine->GetLineHeight()+ 2;
+         pen_y -= freetype_font_engine->GetVerticalAdvance();
       }
       else
       {
@@ -616,6 +616,8 @@ void OpenGLWidget::paintGL( )
       GL_TEXTURE_2D,
       tid);
 
+#define RENDER_AS_WORD_PROCESSOR 0
+#if RENDER_AS_WORD_PROCESSOR
    const std::string s {
       "scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
@@ -626,6 +628,105 @@ void OpenGLWidget::paintGL( )
       s.c_str(),
       0.0f, height() - freetype_font_engine->GetGlyphMaxTop() * scale,
       scale);
+#else
+   static float velocity[] { 105.0f, 40.0f };
+   static float position[] { width() / 2.0f, height() / 2.0f };
+   static auto time = std::chrono::steady_clock::now();
+
+   glDisable(
+      GL_TEXTURE_2D);
+
+   glPushMatrix();
+
+   glTranslatef(position[0], position[1], 0.0f);
+
+   glColor3f(1, 0, 0);
+   
+   glBegin(GL_TRIANGLES);
+   glVertex3f(-6, 6, 0);
+   glVertex3f(-6, -6, 0);
+   glVertex3f(6, -6, 0);
+   glVertex3f(-6, 6, 0);
+   glVertex3f(6, -6, 0);
+   glVertex3f(6, 6, 0);
+   glEnd();
+
+   glColor3f(1, 1, 1);
+
+   glEnable(
+      GL_TEXTURE_2D);
+
+   auto text =
+      std::to_string(position[0]) +
+      "\n" +
+      std::to_string(position[1]);
+
+   double size[2] { };
+   double size_line[2] { };
+
+   for (const auto c : text)
+   {
+      const auto g =
+         freetype_font_engine->GetGlyphMetric(
+            c);
+
+      if (c == '\n')
+      {
+         size_line[0] = 0.0;
+         size_line[1] = size[1];
+         continue;
+      }
+
+      size_line[0] += g->advance;
+      size[0] = std::max(size[0], size_line[0]);
+      size[1] = std::max(size[1], size_line[1] + g->height);
+   }
+
+   RenderText(
+      text.c_str(),
+      size[0] / -2.0 * scale,
+      (freetype_font_engine->GetVerticalAdvance() + 12) * scale,
+      scale);
+
+   glPopMatrix();
+
+   auto now = std::chrono::steady_clock::now();
+   auto delta = now - time;
+
+   time = now;
+
+   position[0] +=
+      velocity[0] *
+      std::chrono::duration_cast< std::chrono::duration< float > >(delta).count();
+   position[1] +=
+      velocity[1] *
+      std::chrono::duration_cast< std::chrono::duration< float > >(delta).count();
+
+   if (0.0f >= position[0])
+   {
+      position[0] = 0.0f;
+      velocity[0] *= -1.0f;
+   }
+   else if (position[0] >= width() - 1)
+   {
+      position[0] = width() - 1;
+      velocity[0] *= -1.0f;
+   }
+
+   if (0.0f >= position[1])
+   {
+      position[1] = 0.0f;
+      velocity[1] *= -1.0f;
+   }
+   else if (position[1] >= height() - 1)
+   {
+      position[1] = height() - 1;
+      velocity[1] *= -1.0f;
+   }
+
+   update();
+
+#endif // RENDER_AS_WORD_PROCESSOR
 
    //glBegin(
    //   GL_TRIANGLES);

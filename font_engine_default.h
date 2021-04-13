@@ -28,7 +28,7 @@ public:
    virtual uint32_t GetGlyphMaxWidth( ) const noexcept override;
    virtual uint32_t GetGlyphMaxHeight( ) const noexcept override;
    virtual int32_t GetGlyphMaxTop( ) const noexcept override;
-   virtual uint32_t GetLineHeight( ) const noexcept override;
+   virtual double GetVerticalAdvance( ) const noexcept override;
 
    virtual const Metric * GetGlyphMetric(
       const uint32_t character ) noexcept override;

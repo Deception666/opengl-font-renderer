@@ -32,7 +32,7 @@ public:
    virtual uint32_t GetGlyphMaxWidth( ) const noexcept = 0;
    virtual uint32_t GetGlyphMaxHeight( ) const noexcept = 0;
    virtual int32_t GetGlyphMaxTop( ) const noexcept = 0;
-   virtual uint32_t GetLineHeight( ) const noexcept = 0;
+   virtual double GetVerticalAdvance( ) const noexcept = 0;
 
    struct TextureCoords
    {
