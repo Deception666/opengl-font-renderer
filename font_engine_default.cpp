@@ -1,5 +1,13 @@
 #include "font_engine_default.h"
 
+#if _WIN32
+#include "font_engine_default_data_windows.h"
+#else
+#error "Define for this platform type!"
+#endif
+
+#include <string>
+
 namespace opengl
 {
 
@@ -9,7 +17,11 @@ FontEngineDefault::~FontEngineDefault( ) noexcept
 
 bool FontEngineDefault::Initialize( ) noexcept
 {
-   return false;
+   texture_map_.reset(
+      DEFAULT_TEXTURE_MAP,
+      [ ] ( const uint8_t * const ) { });
+
+   return true;
 }
 
 bool FontEngineDefault::SetFont(
@@ -27,8 +39,8 @@ bool FontEngineDefault::SetFont(
 
 std::string FontEngineDefault::GetFont( ) const noexcept
 {
-    static std::string s;
-    return s;
+    return
+       DEFAULT_FONT_FILENAME;
 }
 
 bool FontEngineDefault::SetSize(
@@ -39,38 +51,61 @@ bool FontEngineDefault::SetSize(
 
 uint32_t FontEngineDefault::GetSize( ) const noexcept
 {
-    return uint32_t();
+    return
+       DEFAULT_GLYPH_FONT_PIXEL_SIZE;
 }
 
 uint32_t FontEngineDefault::GetGlyphMaxWidth( ) const noexcept
 {
-   return uint32_t();
+   return
+      DEFAULT_GLYPH_MAX_WIDTH;
 }
 
 uint32_t FontEngineDefault::GetGlyphMaxHeight( ) const noexcept
 {
-   return uint32_t();
+   return
+      DEFAULT_GLYPH_MAX_HEIGHT;
 }
 
 int32_t FontEngineDefault::GetGlyphMaxTop( ) const noexcept
 {
-   return int32_t();
+   return
+      DEFAULT_GLYPH_MAX_TOP;
 }
 
 double FontEngineDefault::GetVerticalAdvance( ) const noexcept
 {
-   return double();
+   return
+      DEFAULT_VERTICAL_ADVANCE;
 }
 
 const FontEngine::Metric * FontEngineDefault::GetGlyphMetric(
    const uint32_t character ) noexcept
 {
-    return nullptr;
+   const FontEngine::Metric * metric { nullptr };
+
+   if (DEFAULT_GLYPH_METRICS_BEGIN <= character &&
+       character < DEFAULT_GLYPH_METRICS_END)
+   {
+      const uint32_t index =
+         character - DEFAULT_GLYPH_METRICS_BEGIN;
+
+      metric =
+         &DEFAULT_GLYPH_METRICS[index];
+   }
+
+   return metric;
 }
 
 FontEngine::TextureMap FontEngineDefault::GetGlyphTextureMap( ) noexcept
 {
-    return TextureMap();
+   return {
+      DEFAULT_TEXTURE_WIDTH,
+      DEFAULT_TEXTURE_HEIGHT,
+      decltype(texture_map_)::weak_type {
+         texture_map_
+      }
+   };
 }
 
 } // namespace opengl

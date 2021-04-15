@@ -83,8 +83,8 @@ private:
    int32_t (* const set_pixel_sizes_) ( FT_Face::pointer, uint32_t, uint32_t );
    int32_t (* const load_char_) ( FT_Face::pointer, uint32_t, int32_t );
 
-   std::string font_filename_;
    uint32_t size_;
+   std::string font_filename_;
    std::unordered_map< uint32_t, Glyph >
       glyphs_;
 

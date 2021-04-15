@@ -3,6 +3,9 @@
 
 #include "font_engine.h"
 
+#include <cstdint>
+#include <memory>
+
 namespace opengl
 {
 
@@ -34,6 +37,10 @@ public:
       const uint32_t character ) noexcept override;
 
    virtual TextureMap GetGlyphTextureMap( ) noexcept override;
+
+private:
+   std::shared_ptr< const uint8_t [] >
+      texture_map_;
 
 };
 

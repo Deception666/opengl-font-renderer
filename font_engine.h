@@ -70,7 +70,7 @@ public:
    {
       uint32_t width { };
       uint32_t height { };
-      std::weak_ptr< uint8_t [] > texture_map { };
+      std::weak_ptr< const uint8_t [] > texture_map { };
    };
 
    virtual TextureMap GetGlyphTextureMap( ) noexcept = 0;

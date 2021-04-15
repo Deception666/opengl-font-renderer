@@ -7,11 +7,14 @@
 #include <memory>
 #include <cstring>
 #include <algorithm>
+#include <fstream>
+#include <iomanip>
 
 #include <QtGui/QKeyEvent>
+#include <QtGui/QImageWriter>
 
-#include <ft2build.h>
-#include <freetype/freetype.h>
+//#include <ft2build.h>
+//#include <freetype/freetype.h>
 
 #if _WIN32
 
@@ -28,6 +31,7 @@
 //#include "freetype.h"
 #include "font_engine_factory.h"
 #include "font_engine_freetype.h"
+#include "font_engine_default.h"
 
 //using FT_Module___ =
 //   std::unique_ptr<
@@ -144,6 +148,104 @@ opengl::FontEngineFreeType::TextureMap
    font_engine_texture_map;
 std::vector< uint32_t > default_char_set_;
 
+void write_data( )
+{
+   std::ofstream o;
+
+   o.open(
+      "texture.txt",
+      std::ios_base::out |
+      std::ios_base::trunc);
+
+   o
+      << std::hex
+      << std::uppercase
+      << std::internal/*
+      << std::setw(2)
+      << std::setfill('0')*/;
+
+   const auto texture_map =
+      freetype_font_engine->GetGlyphTextureMap();
+   
+   const auto map =
+      texture_map.texture_map.lock();
+
+   for (uint32_t h { }; texture_map.height > h; ++h)
+   {
+      for (uint32_t r { }; texture_map.width > r; ++r)
+      {
+         o
+            << "0x"
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast< uint32_t >(
+               *(map.get() + (texture_map.width * h + r)))
+            << ", ";
+      }
+
+      o << "\n";
+   }
+
+   QImage image {
+      static_cast< int32_t >(texture_map.width),
+      static_cast< int32_t >(texture_map.height),
+      QImage::Format::Format_Grayscale8
+   };
+
+   std::copy(
+      map.get(),
+      map.get() + texture_map.width * texture_map.height,
+      image.bits());
+
+   QImageWriter image_writer {
+      "image.png"
+   };
+
+   image_writer.write(
+      image);
+
+   std::ofstream o2;
+
+   o2.open(
+      "metrics.txt",
+      std::ios_base::out |
+      std::ios_base::trunc);
+
+   o2
+      << "VA: " << freetype_font_engine->GetVerticalAdvance() << "\n"
+      << "MH: " << freetype_font_engine->GetGlyphMaxHeight() << "\n"
+      << "MW: " << freetype_font_engine->GetGlyphMaxWidth() << "\n"
+      << "MT: " << freetype_font_engine->GetGlyphMaxTop() << "\n"
+      << "SZ: " << freetype_font_engine->GetSize() << "\n\n";
+
+   for (const auto c : default_char_set_)
+   {
+      const auto metric =
+         freetype_font_engine->GetGlyphMetric(c);
+
+      o2
+         << "{ "
+         << metric->width << ", "
+         << metric->height << ", "
+         << metric->top << ", "
+         << metric->left << ", "
+         << metric->advance << ", "
+         << "{ { "
+         << metric->tex_coords.absolute.top << ", "
+         << metric->tex_coords.absolute.bottom << ", "
+         << metric->tex_coords.absolute.left << ", "
+         << metric->tex_coords.absolute.right
+         << " }, "
+         << "{ "
+         << std::setprecision(10)
+         << metric->tex_coords.normalized.top << "f, "
+         << metric->tex_coords.normalized.bottom << "f, "
+         << metric->tex_coords.normalized.left << "f, "
+         << metric->tex_coords.normalized.right << "f"
+         << " } } },\n";
+   }
+}
+
 void font_test( )
 {
    //const FT_Module___ module {
@@ -189,7 +291,11 @@ void font_test( )
       "arial.ttf",
       "itcedscr.ttf",
       "bradhitc.ttf",
-      "consola.ttf"
+      "consola.ttf",
+      "times.ttf",
+      "calibri.ttf",
+      "cambria.ttc",
+      "bkant.ttf"
    };
 
    size_t index =
@@ -223,6 +329,8 @@ void font_test( )
          freetype_font_engine->GetGlyphMetric(c);
       }
    }
+
+   //write_data();
 
    //library.set_pixel_sizes(
    //   ft_face,
@@ -373,9 +481,9 @@ public:
            event->modifiers() & Qt::KeyboardModifier::ControlModifier)
       {
          if (event->key() == Qt::Key::Key_BracketLeft)
-            ::scale -= 0.1f;
+            ::scale -= 0.025f;
          else
-            ::scale += 0.1f;
+            ::scale += 0.025f;
 
          ::scale =
             std::clamp(
@@ -443,6 +551,66 @@ void OpenGLWidget::resizeGL(
 {
 }
 
+std::pair<
+   std::pair< double, double >,
+   std::pair< double, double > >
+CalculateBoundingBox(
+   const char * const text )
+{
+   std::pair<
+      std::pair< double, double >,
+      std::pair< double, double > >
+      bounding_box { };
+
+   const char * s { text };
+   const char * const e { text + std::strlen(text) };
+
+   double pen_x { };
+   double pen_y { };
+
+   for (; s != e; ++s)
+   {
+      const auto metric =
+         freetype_font_engine->GetGlyphMetric(
+            *s);
+
+      if (*s == '\n')
+      {
+         pen_x = 0;
+         pen_y -= freetype_font_engine->GetVerticalAdvance();
+      }
+      else
+      {
+         if (metric)
+         {
+            double old_pen_x = pen_x;
+            pen_x += metric->advance;
+
+            bounding_box.first.second =
+               std::max(
+                  pen_y - (double(metric->height) - metric->top) + metric->height,
+                  bounding_box.first.second);
+
+            bounding_box.second.first =
+               std::max(
+                  pen_x,
+                  bounding_box.second.first);
+            bounding_box.second.first =
+               std::max(
+                  old_pen_x + metric->left + metric->width,
+                  bounding_box.second.first);
+            bounding_box.second.second =
+               std::min(
+                  pen_y - (double(metric->height) - metric->top),
+                  bounding_box.second.second);
+         }
+      }
+   }
+
+   return
+      bounding_box;
+}
+
 void RenderText(
    const char * const text,
    const float x,
@@ -481,45 +649,80 @@ void RenderText(
          freetype_font_engine->GetGlyphMetric(
             c);
 
-         if (c != ' ')
+         if (g)
          {
-            const float x =
-               pen_x + g->left;
-            const float y =
-               pen_y - (static_cast< float >(g->height) - g->top);
-            
-            glTexCoord2f(
-               g->tex_coords.normalized.left,
-               g->tex_coords.normalized.top);
-            glVertex3f(x, y + g->height, 0.0f);
-            glTexCoord2f(
-               g->tex_coords.normalized.left,
-               g->tex_coords.normalized.bottom);
-            glVertex3f(x, y, 0.0f);
-            glTexCoord2f(
-               g->tex_coords.normalized.right,
-               g->tex_coords.normalized.bottom);
-            glVertex3f(x + g->width, y, 0.0f);
+            if (c != ' ')
+            {
+               const float x =
+                  pen_x + g->left;
+               const float y =
+                  pen_y - (static_cast< float >(g->height) - g->top);
+               
+               glTexCoord2f(
+                  g->tex_coords.normalized.left,
+                  g->tex_coords.normalized.top);
+               glVertex3f(x, y + g->height, 0.0f);
+               glTexCoord2f(
+                  g->tex_coords.normalized.left,
+                  g->tex_coords.normalized.bottom);
+               glVertex3f(x, y, 0.0f);
+               glTexCoord2f(
+                  g->tex_coords.normalized.right,
+                  g->tex_coords.normalized.bottom);
+               glVertex3f(x + g->width, y, 0.0f);
 
-            glTexCoord2f(
-               g->tex_coords.normalized.left,
-               g->tex_coords.normalized.top);
-            glVertex3f(x, y + g->height, 0.0f);
-            glTexCoord2f(
-               g->tex_coords.normalized.right,
-               g->tex_coords.normalized.bottom);
-            glVertex3f(x + g->width, y, 0.0f);
-            glTexCoord2f(
-               g->tex_coords.normalized.right,
-               g->tex_coords.normalized.top);
-            glVertex3f(x + g->width, y + g->height, 0.0f);
+               glTexCoord2f(
+                  g->tex_coords.normalized.left,
+                  g->tex_coords.normalized.top);
+               glVertex3f(x, y + g->height, 0.0f);
+               glTexCoord2f(
+                  g->tex_coords.normalized.right,
+                  g->tex_coords.normalized.bottom);
+               glVertex3f(x + g->width, y, 0.0f);
+               glTexCoord2f(
+                  g->tex_coords.normalized.right,
+                  g->tex_coords.normalized.top);
+               glVertex3f(x + g->width, y + g->height, 0.0f);
+            }
+
+            pen_x += g->advance;
          }
-
-         pen_x += g->advance;
       }
    }
 
    glEnd();
+
+   const auto bounding_box =
+      CalculateBoundingBox(
+         text);
+
+   glDisable(
+      GL_TEXTURE_2D);
+
+   glBegin(
+      GL_LINE_LOOP);
+
+   glVertex3d(
+      bounding_box.first.first,
+      bounding_box.first.second,
+      0.0);
+   glVertex3d(
+      bounding_box.second.first,
+      bounding_box.first.second,
+      0.0);
+   glVertex3d(
+      bounding_box.second.first,
+      bounding_box.second.second,
+      0.0);
+   glVertex3d(
+      bounding_box.first.first,
+      bounding_box.second.second,
+      0.0);
+
+   glEnd();
+
+   glEnable(
+      GL_TEXTURE_2D);
 
    glPopMatrix();
 }
@@ -616,7 +819,7 @@ void OpenGLWidget::paintGL( )
       GL_TEXTURE_2D,
       tid);
 
-#define RENDER_AS_WORD_PROCESSOR 0
+#define RENDER_AS_WORD_PROCESSOR 1
 #if RENDER_AS_WORD_PROCESSOR
    const std::string s {
       "scale: " + std::to_string(scale) + "\n"
@@ -685,7 +888,7 @@ void OpenGLWidget::paintGL( )
    RenderText(
       text.c_str(),
       size[0] / -2.0 * scale,
-      (freetype_font_engine->GetVerticalAdvance() + 12) * scale,
+      freetype_font_engine->GetVerticalAdvance() * scale + 12,
       scale);
 
    glPopMatrix();

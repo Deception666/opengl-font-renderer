@@ -19,6 +19,7 @@ add_executable(
    font_engine.h
    font_engine_default.cpp
    font_engine_default.h
+   font_engine_default_data_windows.h
    font_engine_factory.cpp
    font_engine_factory.h
    font_engine_freetype.cpp
