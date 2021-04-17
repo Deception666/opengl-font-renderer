@@ -243,6 +243,8 @@ FontEngineFreeType::GenerateTextureCoords(
          tex_coords.absolute.bottom /
          static_cast< double >(TEXTURE_HEIGHT - 1);
 
+      tex_coords.valid = true;
+
       metric_data.current_column +=
          glyph_width + 2;
 
@@ -401,27 +403,30 @@ FontEngineFreeType::GenerateTextureMap( ) const noexcept
 
          for (const auto & metric : metric_data_.metrics)
          {
-            const auto glyph =
-               freetype_->GetGlyph(
-                  metric.first);
-
-            if (glyph)
+            if (metric.second.tex_coords.valid)
             {
-               const auto buffer =
-                  glyph->bitmap.data();
-               const auto glyph_width =
-                  metric.second.width;
-               const auto glyph_height =
-                  metric.second.height;
+               const auto glyph =
+                  freetype_->GetGlyph(
+                     metric.first);
 
-               for (uint32_t i { }; glyph_height > i; ++i)
+               if (glyph)
                {
-                  std::copy(
-                     buffer + glyph_width * (glyph_height - i - 1),
-                     buffer + glyph_width * (glyph_height - i),
-                     texture_map.second.get() +
-                     (metric.second.tex_coords.absolute.bottom + i) * TEXTURE_WIDTH +
-                     metric.second.tex_coords.absolute.left);
+                  const auto buffer =
+                     glyph->bitmap.data();
+                  const auto glyph_width =
+                     metric.second.width;
+                  const auto glyph_height =
+                     metric.second.height;
+
+                  for (uint32_t i { }; glyph_height > i; ++i)
+                  {
+                     std::copy(
+                        buffer + glyph_width * (glyph_height - i - 1),
+                        buffer + glyph_width * (glyph_height - i),
+                        texture_map.second.get() +
+                        (metric.second.tex_coords.absolute.bottom + i) * TEXTURE_WIDTH +
+                        metric.second.tex_coords.absolute.left);
+                  }
                }
             }
          }

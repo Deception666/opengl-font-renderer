@@ -933,6 +933,9 @@ void OpenGLWidget::paintGL( )
 
 #define RENDER_AS_WORD_PROCESSOR 1
 #if RENDER_AS_WORD_PROCESSOR
+
+#define RENDER_FONT_TEXTURE 0
+
    const std::string s {
       "scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
@@ -943,6 +946,46 @@ void OpenGLWidget::paintGL( )
       s.c_str(),
       0.0f, height() - freetype_font_engine->GetGlyphMaxTop() * scale,
       scale);
+
+#if RENDER_FONT_TEXTURE
+   
+   glMatrixMode(
+      GL_PROJECTION);
+   glLoadIdentity();
+   glMatrixMode(
+      GL_MODELVIEW);
+   glLoadIdentity();
+
+   const uint32_t tid =
+      SetupTexture();
+
+   glEnable(
+      GL_TEXTURE_2D);
+   glBindTexture(
+      GL_TEXTURE_2D,
+      tid);
+
+   glBegin(
+      GL_TRIANGLES);
+
+   glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, 0.0f);
+   glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
+   glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 0.0f);
+
+   glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, 0.0f);
+   glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 0.0f);
+   glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, 0.0f);
+
+   glEnd();
+
+   glBindTexture(
+      GL_TEXTURE_2D,
+      0);
+   glDisable(
+      GL_TEXTURE_2D);
+
+#endif
+
 #else
    static float velocity[] { 105.0f, 40.0f };
    static float position[] { width() / 2.0f, height() / 2.0f };

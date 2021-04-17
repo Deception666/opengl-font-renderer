@@ -36,6 +36,8 @@ public:
 
    struct TextureCoords
    {
+      bool valid { false };
+
       struct Pixel
       {
          uint32_t top { };
