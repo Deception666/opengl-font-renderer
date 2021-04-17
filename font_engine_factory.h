@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <vector>
+#include <string>
 
 namespace opengl
 {
@@ -23,10 +23,9 @@ enum class FontEngineType : size_t
 
 std::shared_ptr< FontEngine >
 ConstructFontEngine(
+   const std::string & font_filename,
+   const uint32_t size,
    const FontEngineType type ) noexcept;
-
-void SetDefaultCharacterSet(
-   std::vector< uint32_t > character_set ) noexcept;
 
 } // namespace font_engine_factory
 

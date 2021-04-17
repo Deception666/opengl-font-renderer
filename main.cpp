@@ -129,6 +129,8 @@ uint32_t size { 48 };
 size_t font_index { 0 };
 //std::unique_ptr< uint8_t [] > texture;
 
+static std::string string;
+
 //struct glyph
 //{
 //   uint32_t width;
@@ -274,14 +276,6 @@ void font_test( )
 
    //auto freetype =
    //   opengl::FreeType::Create();
-   
-   static bool init { true };
-   if (!freetype_font_engine)
-   {
-      freetype_font_engine =
-         opengl::font_engine_factory::ConstructFontEngine(
-            opengl::font_engine_factory::FontEngineType::FREETYPE);
-   }
 
    const char * const fonts[] {
       //"c:/windows/fonts/arial.ttf",
@@ -303,11 +297,32 @@ void font_test( )
          font_index,
          static_cast< size_t >(0),
          std::size(fonts) - 1);
+   
+   //static bool init { true };
+   //if (!freetype_font_engine)
+   {
+      freetype_font_engine =
+         opengl::font_engine_factory::ConstructFontEngine(
+            fonts[index],
+            size,
+            opengl::font_engine_factory::FontEngineType::FREETYPE);
+
+      std::string s =
+         "scale: " + std::to_string(scale) + "\n"
+         "size: " + std::to_string(::size) + "\n"
+         + string;
+
+      for (auto c : s)
+      {
+         freetype_font_engine->GetGlyphMetric(
+            c);
+      }
+   }
 
    //freetype->SetFont(
    //   fonts[index]);
-   freetype_font_engine->SetFont(
-      fonts[index]);
+   //freetype_font_engine->SetFont(
+   //   fonts[index]);
 
    //library.new_face(
    //   ft_instance,
@@ -317,18 +332,18 @@ void font_test( )
 
    //freetype->SetSize(
    //   size);
-   freetype_font_engine->SetSize(
-      size);
+   //freetype_font_engine->SetSize(
+   //   size);
 
-   if (init)
-   {
-      init = false;
-
-      for (auto c : default_char_set_)
-      {
-         freetype_font_engine->GetGlyphMetric(c);
-      }
-   }
+   //if (init)
+   //{
+   //   init = false;
+   //
+   //   for (auto c : default_char_set_)
+   //   {
+   //      freetype_font_engine->GetGlyphMetric(c);
+   //   }
+   //}
 
    //write_data();
 
@@ -454,7 +469,6 @@ class OpenGLWidget :
 {
 public:
 
-   std::string string;
    virtual void keyPressEvent(QKeyEvent *event) override
    {
       if ((event->key() == Qt::Key::Key_Plus ||
@@ -543,12 +557,14 @@ private:
 
 void OpenGLWidget::initializeGL( )
 {
+   assert(glGetError() == GL_NO_ERROR);
 }
 
 void OpenGLWidget::resizeGL(
    const int32_t width,
    const int32_t height )
 {
+   assert(glGetError() == GL_NO_ERROR);
 }
 
 std::pair<
@@ -570,10 +586,6 @@ CalculateBoundingBox(
 
    for (; s != e; ++s)
    {
-      const auto metric =
-         freetype_font_engine->GetGlyphMetric(
-            *s);
-
       if (*s == '\n')
       {
          pen_x = 0;
@@ -581,6 +593,10 @@ CalculateBoundingBox(
       }
       else
       {
+         const auto metric =
+         freetype_font_engine->GetGlyphMetric(
+            *s);
+
          if (metric)
          {
             double old_pen_x = pen_x;
@@ -611,123 +627,7 @@ CalculateBoundingBox(
       bounding_box;
 }
 
-void RenderText(
-   const char * const text,
-   const float x,
-   const float y,
-   const float scale )
-{
-   if (!freetype_font_engine) return;
-
-   const char * s { text };
-   const char * const e { text + std::strlen(text) };
-
-   glPushMatrix();
-
-   glTranslatef(x, y, 0);
-   glScalef(scale, scale, 1.0);
-
-   glBegin(
-      GL_TRIANGLES);
-
-   float pen_x { };
-   float pen_y { };
-
-   for (; s != e; ++s)
-   {
-      const int8_t c { *s };
-
-      if (c == '\n')
-      {
-         pen_x = 0;
-         pen_y -= freetype_font_engine->GetVerticalAdvance();
-      }
-      else
-      {
-         const auto g =
-         //glyphs[c];
-         freetype_font_engine->GetGlyphMetric(
-            c);
-
-         if (g)
-         {
-            if (c != ' ')
-            {
-               const float x =
-                  pen_x + g->left;
-               const float y =
-                  pen_y - (static_cast< float >(g->height) - g->top);
-               
-               glTexCoord2f(
-                  g->tex_coords.normalized.left,
-                  g->tex_coords.normalized.top);
-               glVertex3f(x, y + g->height, 0.0f);
-               glTexCoord2f(
-                  g->tex_coords.normalized.left,
-                  g->tex_coords.normalized.bottom);
-               glVertex3f(x, y, 0.0f);
-               glTexCoord2f(
-                  g->tex_coords.normalized.right,
-                  g->tex_coords.normalized.bottom);
-               glVertex3f(x + g->width, y, 0.0f);
-
-               glTexCoord2f(
-                  g->tex_coords.normalized.left,
-                  g->tex_coords.normalized.top);
-               glVertex3f(x, y + g->height, 0.0f);
-               glTexCoord2f(
-                  g->tex_coords.normalized.right,
-                  g->tex_coords.normalized.bottom);
-               glVertex3f(x + g->width, y, 0.0f);
-               glTexCoord2f(
-                  g->tex_coords.normalized.right,
-                  g->tex_coords.normalized.top);
-               glVertex3f(x + g->width, y + g->height, 0.0f);
-            }
-
-            pen_x += g->advance;
-         }
-      }
-   }
-
-   glEnd();
-
-   const auto bounding_box =
-      CalculateBoundingBox(
-         text);
-
-   glDisable(
-      GL_TEXTURE_2D);
-
-   glBegin(
-      GL_LINE_LOOP);
-
-   glVertex3d(
-      bounding_box.first.first,
-      bounding_box.first.second,
-      0.0);
-   glVertex3d(
-      bounding_box.second.first,
-      bounding_box.first.second,
-      0.0);
-   glVertex3d(
-      bounding_box.second.first,
-      bounding_box.second.second,
-      0.0);
-   glVertex3d(
-      bounding_box.first.first,
-      bounding_box.second.second,
-      0.0);
-
-   glEnd();
-
-   glEnable(
-      GL_TEXTURE_2D);
-
-   glPopMatrix();
-}
-
-void OpenGLWidget::paintGL( )
+uint32_t SetupTexture( )
 {
    static uint32_t tid { 0 };
 
@@ -739,7 +639,7 @@ void OpenGLWidget::paintGL( )
       auto tex_map =
          font_engine_texture_map.texture_map.lock();
 
-      if (!tex_map) return;
+      if (!tex_map) return 0;
 
       if (tid)
          glDeleteTextures(
@@ -789,35 +689,247 @@ void OpenGLWidget::paintGL( )
          GL_LINEAR);
       glBindTexture(
          GL_TEXTURE_2D,
-         tid);
+         0);
       //texture.reset();
 
       assert(glGetError() == GL_NO_ERROR);
    }
 
-   glEnable(
-      GL_BLEND);
-   glBlendFunc(
-      GL_SRC_ALPHA,
-      GL_ONE_MINUS_SRC_ALPHA);
+   return tid;
+}
 
-   glMatrixMode(
-      GL_PROJECTION);
-   glLoadIdentity();
-   glOrtho(
-      0.0, width(),
-      0.0, height(),
-      -1.0, 0.0);
+void RenderText(
+   const char * const text,
+   const float x,
+   const float y,
+   const float scale)
+{
+   if (!freetype_font_engine) return;
 
-   glMatrixMode(
-      GL_MODELVIEW);
-   glLoadIdentity();
+   if (!text || *text == '\0') return;
+
+   const size_t text_length =
+      std::strlen(text);
+
+   const char * s { text };
+   const char * const e { text + text_length };
+
+   std::vector< float > vertices;
+   vertices.reserve(text_length * 3 * 6);
+   std::vector< float > tex_coords;
+   tex_coords.reserve(text_length * 2 * 6);
+
+   //glBegin(
+   //   GL_TRIANGLES);
+
+   float pen_x { };
+   float pen_y { };
+
+   for (; s != e; ++s)
+   {
+      const int8_t c { *s };
+
+      if (c == '\n')
+      {
+         pen_x = 0;
+         pen_y -= freetype_font_engine->GetVerticalAdvance();
+      }
+      else
+      {
+         const auto g =
+         //glyphs[c];
+         freetype_font_engine->GetGlyphMetric(
+            c);
+
+         if (g)
+         {
+            if (c != ' ')
+            {
+               const float x =
+                  pen_x + g->left;
+               const float y =
+                  pen_y - (static_cast< float >(g->height) - g->top);
+               
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.left,
+               //   g->tex_coords.normalized.top);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.left);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.top);
+               //glVertex3f(x, y + g->height, 0.0f);
+               vertices.emplace_back(x);
+               vertices.emplace_back(y + g->height);
+               vertices.emplace_back(0.0f);
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.left,
+               //   g->tex_coords.normalized.bottom);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.left);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.bottom);
+               //glVertex3f(x, y, 0.0f);
+               vertices.emplace_back(x);
+               vertices.emplace_back(y);
+               vertices.emplace_back(0.0f);
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.right,
+               //   g->tex_coords.normalized.bottom);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.right);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.bottom);
+               //glVertex3f(x + g->width, y, 0.0f);
+               vertices.emplace_back(x + g->width);
+               vertices.emplace_back(y);
+               vertices.emplace_back(0.0f);
+
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.left,
+               //   g->tex_coords.normalized.top);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.left);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.top);
+               //glVertex3f(x, y + g->height, 0.0f);
+               vertices.emplace_back(x);
+               vertices.emplace_back(y + g->height);
+               vertices.emplace_back(0.0f);
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.right,
+               //   g->tex_coords.normalized.bottom);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.right);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.bottom);
+               //glVertex3f(x + g->width, y, 0.0f);
+               vertices.emplace_back(x + g->width);
+               vertices.emplace_back(y);
+               vertices.emplace_back(0.0f);
+               //glTexCoord2f(
+               //   g->tex_coords.normalized.right,
+               //   g->tex_coords.normalized.top);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.right);
+               tex_coords.emplace_back(
+                  g->tex_coords.normalized.top);
+               //glVertex3f(x + g->width, y + g->height, 0.0f);
+               vertices.emplace_back(x + g->width);
+               vertices.emplace_back(y + g->height);
+               vertices.emplace_back(0.0f);
+            }
+
+            pen_x += g->advance;
+         }
+      }
+   }
+
+   const uint32_t tid =
+      SetupTexture();
 
    glEnable(
       GL_TEXTURE_2D);
    glBindTexture(
       GL_TEXTURE_2D,
       tid);
+
+   glPushMatrix();
+
+   glTranslatef(x, y, 0);
+   glScalef(scale, scale, 1.0);
+
+   glEnableClientState(
+      GL_VERTEX_ARRAY);
+   glEnableClientState(
+      GL_TEXTURE_COORD_ARRAY);
+
+   glVertexPointer(
+      3, GL_FLOAT, 0, vertices.data());
+   glTexCoordPointer(
+      2, GL_FLOAT, 0, tex_coords.data());
+
+   glDrawArrays(
+      GL_TRIANGLES,
+      0,
+      vertices.size() / 3);
+
+   glDisableClientState(
+      GL_VERTEX_ARRAY);
+   glDisableClientState(
+      GL_TEXTURE_COORD_ARRAY);
+
+   //glEnd();
+
+   glBindTexture(
+      GL_TEXTURE_2D,
+      0);
+   glDisable(
+      GL_TEXTURE_2D);
+
+   const auto bounding_box =
+      CalculateBoundingBox(
+         text);
+
+   glBegin(
+      GL_LINE_LOOP);
+
+   glVertex3d(
+      bounding_box.first.first,
+      bounding_box.first.second,
+      0.0);
+   glVertex3d(
+      bounding_box.second.first,
+      bounding_box.first.second,
+      0.0);
+   glVertex3d(
+      bounding_box.second.first,
+      bounding_box.second.second,
+      0.0);
+   glVertex3d(
+      bounding_box.first.first,
+      bounding_box.second.second,
+      0.0);
+
+   glEnd();
+
+   //glEnable(
+   //   GL_TEXTURE_2D);
+
+   glPopMatrix();
+}
+
+void OpenGLWidget::paintGL( )
+{
+   //glEnable(
+   //   GL_BLEND);
+   //glBlendFunc(
+   //   GL_SRC_ALPHA,
+   //   GL_ONE_MINUS_SRC_ALPHA);
+
+   glClear(
+      GL_COLOR_BUFFER_BIT |
+      GL_DEPTH_BUFFER_BIT);
+
+   int32_t w = width();
+   int32_t h = height();
+
+   glMatrixMode(
+      GL_PROJECTION);
+   glLoadIdentity();
+   glOrtho(
+      0.0, w,
+      0.0, h,
+      -1.0, 0.0);
+
+   glMatrixMode(
+      GL_MODELVIEW);
+   glLoadIdentity();
+
+   //glEnable(
+   //   GL_TEXTURE_2D);
+   //glBindTexture(
+   //   GL_TEXTURE_2D,
+   //   tid);
 
 #define RENDER_AS_WORD_PROCESSOR 1
 #if RENDER_AS_WORD_PROCESSOR
@@ -836,9 +948,6 @@ void OpenGLWidget::paintGL( )
    static float position[] { width() / 2.0f, height() / 2.0f };
    static auto time = std::chrono::steady_clock::now();
 
-   glDisable(
-      GL_TEXTURE_2D);
-
    glPushMatrix();
 
    glTranslatef(position[0], position[1], 0.0f);
@@ -855,9 +964,6 @@ void OpenGLWidget::paintGL( )
    glEnd();
 
    glColor3f(1, 1, 1);
-
-   glEnable(
-      GL_TEXTURE_2D);
 
    auto text =
       std::to_string(position[0]) +
@@ -950,21 +1056,30 @@ void OpenGLWidget::paintGL( )
    //
    //glEnd();
 
-   glBindTexture(
-      GL_TEXTURE_2D,
-      0);
+   //glBindTexture(
+   //   GL_TEXTURE_2D,
+   //   0);
 
-   glDisable(
-      GL_BLEND);
-
-   if (font_engine_texture_map.texture_map.expired())
-      update();
+   //glDisable(
+   //   GL_BLEND);
 }
 
 int32_t main(
    const int32_t argc,
    const char * const (&argv)[] )
 {
+   //auto surface_format =
+   //   QSurfaceFormat::defaultFormat();
+   //surface_format.setRenderableType(
+   //   QSurfaceFormat::RenderableType::OpenGL);
+   //surface_format.setProfile(
+   //   QSurfaceFormat::OpenGLContextProfile::CompatibilityProfile);
+   //surface_format.setVersion(
+   //   4, 5);
+   //
+   //QSurfaceFormat::setDefaultFormat(
+   //   surface_format);
+
    int32_t argc_ { argc };
    char ** argv_ { const_cast< char ** >(argv) };
 
@@ -972,17 +1087,6 @@ int32_t main(
       argc_,
       argv_
    };
-
-   std::vector< uint32_t > default_char_set(
-      127 - 32,
-      0u);
-   std::iota(
-      default_char_set.begin(),
-      default_char_set.end(),
-      32u);
-   default_char_set_ = default_char_set;
-   opengl::font_engine_factory::SetDefaultCharacterSet(
-      default_char_set);
 
    font_test();
 

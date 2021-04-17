@@ -3,22 +3,48 @@
 #include "font_engine_default.h"
 #include "font_engine_freetype.h"
 
+#include <mutex>
+#include <sstream>
+#include <thread>
+#include <unordered_map>
+
 namespace opengl {
 namespace font_engine_factory {
 
-std::vector<
-   std::shared_ptr< FontEngine >::weak_type >
-   font_engines_ {
-      static_cast< size_t >(FontEngineType::MAX_TYPES),
-      std::shared_ptr< FontEngine >::weak_type { } };
+template < typename M >
+class reverse_lock final
+{
+public:
+   reverse_lock( M & m ) noexcept :
+   m_ { m }
+   { m_.unlock(); }
 
-std::vector< uint32_t >
-   default_character_set_;
+   ~reverse_lock( ) noexcept
+   { m_.lock(); }
+
+private:
+   M & m_;
+
+};
+
+std::unordered_map<
+   std::string,
+   std::shared_ptr< FontEngine >::weak_type >
+   font_engines_ { };
+
+std::mutex
+   font_engines_mutex_;
 
 std::shared_ptr< FontEngine >
 CreateFontEngine(
+   std::unique_lock< std::mutex > & lock,
+   const std::string & font_filename,
+   const uint32_t size,
    const FontEngineType type ) noexcept
 {
+   reverse_lock rlock {
+      *lock.mutex() };
+
    std::shared_ptr< FontEngine > font_engine {
       nullptr
    };
@@ -47,6 +73,19 @@ CreateFontEngine(
       {
          font_engine.reset();
       }
+      else
+      {
+         const bool set =
+            font_engine->SetFont(
+               font_filename,
+               size);
+
+         if (!set &&
+             type != FontEngineType::DEFAULT)
+         {
+            font_engine.reset();
+         }
+      }
    }
 
    return
@@ -55,45 +94,70 @@ CreateFontEngine(
 
 std::shared_ptr< FontEngine >
 ConstructFontEngine(
+   const std::string & font_filename,
+   const uint32_t size,
    const FontEngineType type ) noexcept
 {
-   std::shared_ptr< FontEngine > font_engine {
-      nullptr
-   };
+   std::shared_ptr< FontEngine >
+      font_engine;
 
-   const size_t index =
-      static_cast< size_t >(type);
+   std::stringstream ss_index;
 
-   if (font_engines_.size() > index)
+   ss_index
+      << std::this_thread::get_id() << " "
+      << font_filename << " "
+      << size << " "
+      << static_cast< size_t >(type);
+
+   const std::string index =
+      ss_index.str();
+
+   std::unique_lock lock {
+      font_engines_mutex_ };
+
+   auto font_engine_it =
+      font_engines_.find(index);
+
+   if (font_engine_it == font_engines_.cend() ||
+       font_engine_it->second.expired())
    {
       font_engine =
-         font_engines_.at(index).lock();
-
-      if (!font_engine)
-      {
-         font_engine =
-            CreateFontEngine(
-               type);
-      }
+         CreateFontEngine(
+            lock,
+            font_filename,
+            size,
+            type);
 
       if (!font_engine &&
           type != FontEngineType::DEFAULT)
       {
+         reverse_lock rlock {
+            lock };
+
          font_engine =
             ConstructFontEngine(
+               font_filename,
+               size,
                FontEngineType::DEFAULT);
       }
+
+      font_engine_it =
+         font_engines_.emplace(
+            index,
+            std::shared_ptr< FontEngine >::weak_type { }).first;
+
+      font_engine_it->second =
+         std::shared_ptr< FontEngine >::weak_type {
+            font_engine };
+   }
+   else
+   {
+      font_engine =
+         font_engine_it->second.lock();
    }
 
    return
       font_engine;
-}
-
-void SetDefaultCharacterSet(
-   std::vector< uint32_t > character_set ) noexcept
-{
-   default_character_set_.swap(
-      character_set);
 }
 
 }} // namespace opengl::font_engine_factory
