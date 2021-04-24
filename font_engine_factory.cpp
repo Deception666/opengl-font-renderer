@@ -2,6 +2,7 @@
 #include "font_engine.h"
 #include "font_engine_default.h"
 #include "font_engine_freetype.h"
+#include "reverse_lock.h"
 
 #include <mutex>
 #include <sstream>
@@ -11,26 +12,10 @@
 namespace opengl {
 namespace font_engine_factory {
 
-template < typename M >
-class reverse_lock final
-{
-public:
-   reverse_lock( M & m ) noexcept :
-   m_ { m }
-   { m_.unlock(); }
-
-   ~reverse_lock( ) noexcept
-   { m_.lock(); }
-
-private:
-   M & m_;
-
-};
-
 std::unordered_map<
    std::string,
-   std::shared_ptr< FontEngine >::weak_type >
-   font_engines_ { };
+   std::weak_ptr< FontEngine > >
+   font_engines_;
 
 std::mutex
    font_engines_mutex_;
@@ -144,10 +129,10 @@ ConstructFontEngine(
       font_engine_it =
          font_engines_.emplace(
             index,
-            std::shared_ptr< FontEngine >::weak_type { }).first;
+            std::weak_ptr< FontEngine > { }).first;
 
       font_engine_it->second =
-         std::shared_ptr< FontEngine >::weak_type {
+         std::weak_ptr< FontEngine > {
             font_engine };
    }
    else

@@ -11,7 +11,9 @@ set(
 if (WIN32)
    add_compile_options(
       /MP
-      /permissive-)
+      /permissive-
+      /DNOMINMAX
+      /DWIN32_LEAN_AND_MEAN)
 endif ( )
 
 add_executable(
@@ -24,10 +26,13 @@ add_executable(
    font_engine_factory.h
    font_engine_freetype.cpp
    font_engine_freetype.h
+   font_texture_manager.cpp
+   font_texture_manager.h
    freetype.cpp
    freetype.h
    main.cpp
-   qt.conf)
+   qt.conf
+   reverse_lock.h)
 
 find_package(
    Qt5
