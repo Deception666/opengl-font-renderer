@@ -581,6 +581,9 @@ void OpenGLWidget::paintGL( )
 #if RENDER_AS_WORD_PROCESSOR
 
 #define RENDER_FONT_TEXTURE 0
+#define RENDER_CURRENT_TIME 1
+
+#if !RENDER_CURRENT_TIME
 
    const std::string s {
       "scale: " + std::to_string(scale) + "\n"
@@ -592,6 +595,66 @@ void OpenGLWidget::paintGL( )
       s.c_str(),
       0.0f, height() - freetype_font_engine->GetGlyphMaxTop() * scale,
       scale);
+
+#else
+
+   using days = std::chrono::duration< int, std::ratio< 86400 > >;
+
+   auto time_now =
+      std::chrono::system_clock::now().time_since_epoch();
+
+   auto yday = std::chrono::duration_cast< days >(
+      std::chrono::system_clock::now().time_since_epoch());
+   auto hr1 = std::chrono::duration_cast< std::chrono::hours >(time_now);
+   auto hr2 = std::chrono::duration_cast< std::chrono::hours >(yday);
+   auto hr = hr1 - hr2;
+
+   auto hour = std::chrono::duration_cast< std::chrono::hours >(hr);
+   auto minute = std::chrono::duration_cast< std::chrono::minutes >(time_now);
+   auto second = std::chrono::duration_cast< std::chrono::seconds >(time_now);
+   auto msec = std::chrono::duration_cast< std::chrono::milliseconds >(time_now);
+
+   // completely wrong do to needing to validate months but who cares for this...
+   TIME_ZONE_INFORMATION info { };
+   GetTimeZoneInformation(
+      &info);
+
+   auto hour_24 =
+      (hour.count() + 24 - (info.Bias + info.DaylightBias) / 60) % 24;
+
+   std::string am_pm {
+      hour_24 >= 12 ?
+      "PM" : "AM" };
+
+   auto milisec =
+      static_cast< uint64_t >(msec.count() % 1000 / 10);
+
+   std::stringstream ss;
+   ss
+      << std::setfill('0')
+      << std::setw(2)
+      << (hour_24 % 12 == 0 ? 12 : hour_24 % 12)
+      << ":"
+      << std::setw(2)
+      << minute.count() % 60
+      << ":"
+      << std::setw(2)
+      << second.count() % 60
+      << ":"
+      << std::setw(2)
+      << milisec
+      << " "
+      << am_pm;
+   
+   RenderText(
+      ss.str().c_str(),
+      width() / 2.0f - 150,
+      height() / 2.0f,
+      scale);
+
+   update();
+
+#endif
 
 #if RENDER_FONT_TEXTURE
    
