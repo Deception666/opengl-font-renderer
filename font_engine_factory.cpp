@@ -1,7 +1,8 @@
-#include "font_engine_factory.h"
 #include "font_engine.h"
 #include "font_engine_default.h"
+#include "font_engine_factory.h"
 #include "font_engine_freetype.h"
+#include "font_engine_type.h"
 #include "reverse_lock.h"
 
 #include <mutex>
@@ -25,7 +26,7 @@ CreateFontEngine(
    std::unique_lock< std::mutex > & lock,
    const std::string & font_filename,
    const uint32_t size,
-   const FontEngineType type ) noexcept
+   const FontEngineType font_engine_type ) noexcept
 {
    reverse_lock rlock {
       *lock.mutex() };
@@ -34,7 +35,7 @@ CreateFontEngine(
       nullptr
    };
 
-   switch (type)
+   switch (font_engine_type)
    {
    case FontEngineType::DEFAULT:
       font_engine =
@@ -66,7 +67,7 @@ CreateFontEngine(
                size);
 
          if (!set &&
-             type != FontEngineType::DEFAULT)
+             font_engine_type != FontEngineType::DEFAULT)
          {
             font_engine.reset();
          }
@@ -81,7 +82,7 @@ std::shared_ptr< FontEngine >
 ConstructFontEngine(
    const std::string & font_filename,
    const uint32_t size,
-   const FontEngineType type ) noexcept
+   const FontEngineType font_engine_type ) noexcept
 {
    std::shared_ptr< FontEngine >
       font_engine;
@@ -92,7 +93,7 @@ ConstructFontEngine(
       << std::this_thread::get_id() << " "
       << font_filename << " "
       << size << " "
-      << static_cast< size_t >(type);
+      << static_cast< size_t >(font_engine_type);
 
    const std::string index =
       ss_index.str();
@@ -111,10 +112,10 @@ ConstructFontEngine(
             lock,
             font_filename,
             size,
-            type);
+            font_engine_type);
 
       if (!font_engine &&
-          type != FontEngineType::DEFAULT)
+          font_engine_type != FontEngineType::DEFAULT)
       {
          reverse_lock rlock {
             lock };

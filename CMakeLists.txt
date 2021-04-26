@@ -26,6 +26,7 @@ add_executable(
    font_engine_factory.h
    font_engine_freetype.cpp
    font_engine_freetype.h
+   font_engine_type.h
    font_texture_manager.cpp
    font_texture_manager.h
    freetype.cpp

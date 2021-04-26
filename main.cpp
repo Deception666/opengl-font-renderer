@@ -32,6 +32,7 @@
 #include "font_engine_freetype.h"
 #include "font_engine_default.h"
 #include "font_texture_manager.h"
+#include "font_engine_type.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
@@ -169,7 +170,7 @@ void font_test( )
          opengl::font_engine_factory::ConstructFontEngine(
             fonts[index],
             size,
-            opengl::font_engine_factory::FontEngineType::FREETYPE);
+            opengl::FontEngineType::FREETYPE);
 
       std::string s =
          "scale: " + std::to_string(scale) + "\n"

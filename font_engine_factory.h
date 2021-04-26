@@ -11,21 +11,16 @@ namespace opengl
 
 class FontEngine;
 
+enum class FontEngineType : size_t;
+
 namespace font_engine_factory
 {
-
-enum class FontEngineType : size_t
-{
-   DEFAULT,
-   FREETYPE,
-   MAX_TYPES
-};
 
 std::shared_ptr< FontEngine >
 ConstructFontEngine(
    const std::string & font_filename,
    const uint32_t size,
-   const FontEngineType type ) noexcept;
+   const FontEngineType font_engine_type ) noexcept;
 
 } // namespace font_engine_factory
 
