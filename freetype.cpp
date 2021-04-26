@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <stdexcept>
 #include <utility>
 
 #if _WIN32
@@ -364,6 +365,37 @@ face_ { nullptr, delete_face_ }
 
    instance_.reset(
       instance);
+
+   int32_t version_mmp[3] { };
+
+   version_(
+      instance,
+      version_mmp + 0,
+      version_mmp + 1,
+      version_mmp + 2);
+
+   const uint32_t version {
+      static_cast< uint32_t >(version_mmp[0] << 16) |
+      static_cast< uint32_t >(version_mmp[1] << 8) |
+      static_cast< uint32_t >(version_mmp[2]) };
+
+   // assume that versions greater than the one
+   // specified below are compatible with this impl
+   if (version < 0x00020A04)
+   {
+      throw
+         std::runtime_error {
+            "FreeType version must be 2.10.4 or greater!"
+         };
+   }
+   else if (version >= 0x00030000)
+   {
+      throw
+         std::runtime_error {
+            "FreeType version validated with 2.x.x of the library!  "
+            "A major version upgrade may no longer be compatible!"
+         };
+   }
 }
 
 bool FreeType::SetSize(
