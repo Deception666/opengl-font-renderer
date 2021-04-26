@@ -44,6 +44,7 @@ std::shared_ptr< opengl::FontEngine >
 opengl::FontEngineFreeType::TextureMap
    font_engine_texture_map;
 std::vector< uint32_t > default_char_set_;
+std::shared_ptr< uint32_t > texture;
 
 void write_data( )
 {
@@ -189,6 +190,14 @@ class OpenGLWidget :
    public QOpenGLWidget
 {
 public:
+   virtual ~OpenGLWidget( )
+   {
+      makeCurrent();
+
+      texture.reset();
+
+      doneCurrent();
+   }
 
    virtual void keyPressEvent(QKeyEvent *event) override
    {
@@ -351,7 +360,6 @@ CalculateBoundingBox(
 uint32_t SetupTexture( )
 {
    static uint32_t tid { 0 };
-   static std::shared_ptr< uint32_t > texture;
 
    if (font_engine_texture_map.texture_map.expired())
    {
@@ -581,7 +589,7 @@ void OpenGLWidget::paintGL( )
 #if RENDER_AS_WORD_PROCESSOR
 
 #define RENDER_FONT_TEXTURE 0
-#define RENDER_CURRENT_TIME 1
+#define RENDER_CURRENT_TIME 0
 
 #if !RENDER_CURRENT_TIME
 
