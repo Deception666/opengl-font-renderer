@@ -9,8 +9,6 @@
 namespace opengl
 {
 
-class Font;
-
 class FontEngine
 {
 public:

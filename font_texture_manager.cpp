@@ -1,4 +1,5 @@
 #include "font_texture_manager.h"
+#include "gl_validate.h"
 #include "reverse_lock.h"
 
 #if _WIN32
@@ -31,17 +32,6 @@
 #define GL_CLAMP_TO_BORDER 0x812D
 #endif
 
-#if !NDEBUG
-#if _WIN32
-#define VALIDATE_ACTIVE_GL_CONTEXT( ) \
-   assert(wglGetCurrentContext())
-#else
-#error "Define for this platform!"
-#endif // _WIN32
-#else
-#define VALIDATE_ACTIVE_GL_CONTEXT( )
-#endif // !NDEBUG
-
 namespace opengl {
 namespace font_texture_manager {
 
@@ -63,6 +53,8 @@ void ReleaseTexture(
       glDeleteTextures(
          1,
          texture);
+
+      VALIDATE_NO_GL_ERROR();
    }
 
    delete texture;
@@ -140,6 +132,8 @@ void AllocateTextureStorage(
    glBindTexture(
       GL_TEXTURE_2D,
       0);
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 std::shared_ptr< uint32_t >
@@ -172,6 +166,8 @@ CreateTexture(
             height);
       }
    }
+
+   VALIDATE_NO_GL_ERROR();
 
    return
       texture;
@@ -232,6 +228,8 @@ CreateTexture(
          font_texture_it->second.lock();
    }
 
+   VALIDATE_NO_GL_ERROR();
+
    return
       font_texture;
 }
@@ -286,6 +284,8 @@ void UpdateTexture(
          GL_TEXTURE_2D,
          0);
    }
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 }} // namespace opengl::font_texture_manager

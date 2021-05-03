@@ -31,9 +31,20 @@ add_executable(
    font_texture_manager.h
    freetype.cpp
    freetype.h
+   gl_bind_texture.cpp
+   gl_bind_texture.h
+   gl_enable_client_state.cpp
+   gl_enable_client_state.h
+   gl_enable_state.cpp
+   gl_enable_state.h
+   gl_push_matrix.cpp
+   gl_push_matrix.h
+   gl_validate.h
    main.cpp
    qt.conf
-   reverse_lock.h)
+   reverse_lock.h
+   text.cpp
+   text.h)
 
 find_package(
    Qt5

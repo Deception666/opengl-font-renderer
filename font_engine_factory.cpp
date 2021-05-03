@@ -1,6 +1,6 @@
+#include "font_engine_factory.h"
 #include "font_engine.h"
 #include "font_engine_default.h"
-#include "font_engine_factory.h"
 #include "font_engine_freetype.h"
 #include "font_engine_type.h"
 #include "reverse_lock.h"
