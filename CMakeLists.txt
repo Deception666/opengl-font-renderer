@@ -18,6 +18,7 @@ endif ( )
 
 add_executable(
    font-render
+   calling_convention.h
    font_engine.h
    font_engine_default.cpp
    font_engine_default.h
@@ -31,15 +32,29 @@ add_executable(
    font_texture_manager.h
    freetype.cpp
    freetype.h
+   gl_bind_shader_program.cpp
+   gl_bind_shader_program.h
    gl_bind_texture.cpp
    gl_bind_texture.h
+   gl_bind_vertex_array.cpp
+   gl_bind_vertex_array.h
    gl_enable_client_state.cpp
    gl_enable_client_state.h
    gl_enable_state.cpp
    gl_enable_state.h
+   gl_get_proc_address.h
+   gl_includes.h
    gl_push_matrix.cpp
    gl_push_matrix.h
+   gl_shader.cpp
+   gl_shader.h
+   gl_shader_program.cpp
+   gl_shader_program.h
    gl_validate.h
+   gl_vertex_array.cpp
+   gl_vertex_array.h
+   gl_vertex_buffer.cpp
+   gl_vertex_buffer.h
    main.cpp
    qt.conf
    reverse_lock.h

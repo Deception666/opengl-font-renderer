@@ -33,8 +33,6 @@ template < typename T >
 inline constexpr bool has_lock_unlock_v =
    has_lock_unlock< T >::value;
 
-std::conditional_t< true, bool, int >;
-
 } // namespace details
 
 template < typename M >

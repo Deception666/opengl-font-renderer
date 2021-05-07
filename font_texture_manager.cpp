@@ -1,23 +1,8 @@
 #include "font_texture_manager.h"
+#include "calling_convention.h"
+#include "gl_includes.h"
 #include "gl_validate.h"
 #include "reverse_lock.h"
-
-#if _WIN32
-#include <windows.h>
-
-#if _M_IX86
-#define CALL_CONV __stdcall
-#elif _M_X64
-#define CALL_CONV
-#else
-#define "Define for this platform type!"
-#endif // _M_IX86
-
-#else
-#error "Define for this platform!"
-#endif // _WIN32
-
-#include <gl/gl.h>
 
 #include <algorithm>
 #include <cassert>

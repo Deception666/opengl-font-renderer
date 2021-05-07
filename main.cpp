@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
 #include <QtGui/QKeyEvent>
 #include <QtGui/QImageWriter>
@@ -34,6 +35,12 @@
 #include "font_texture_manager.h"
 #include "font_engine_type.h"
 #include "text.h"
+#include "gl_shader.h"
+#include "gl_shader_program.h"
+#include "gl_bind_shader_program.h"
+#include "gl_vertex_buffer.h"
+#include "gl_vertex_array.h"
+#include "gl_bind_vertex_array.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
@@ -42,6 +49,7 @@ size_t font_index { 0 };
 static std::string string;
 
 std::unique_ptr< opengl::Text > text;
+std::unique_ptr< opengl::gl::ShaderProgram > shader_program;
 
 void font_test( )
 {
@@ -89,6 +97,7 @@ public:
       makeCurrent();
 
       text.reset();
+      shader_program.reset();
 
       doneCurrent();
    }
@@ -251,6 +260,59 @@ void OpenGLWidget::resizeGL(
 //      bounding_box;
 //}
 
+void CreateShader( ) noexcept
+{
+   opengl::gl::Shader vertex {
+      GL_VERTEX_SHADER_ARB };
+
+   std::cout
+      << vertex.SetSource(
+            R"(#version 400 compatibility
+               layout (location = 0) in vec3 vertices;
+               layout (location = 1) in vec2 tex_coords;
+
+               smooth out vec3 color;
+
+               void main( )
+               {
+                  gl_Position =
+                     gl_ProjectionMatrix *
+                     gl_ModelViewMatrix *
+                     vec4(vertices, 1.0f);
+
+                  color = vec3(tex_coords, 0.0f);
+               })")
+      << "\n\n";
+
+   opengl::gl::Shader fragment {
+      GL_FRAGMENT_SHADER_ARB };
+
+   std::cout
+      << fragment.SetSource(
+            R"(#version 400 compatibility
+               layout (location = 0) out vec4 fragment_color;
+
+               smooth in vec3 color;
+
+               void main( )
+               {
+                  fragment_color = vec4(color, 1.0f);
+               })")
+      << "\n\n";
+
+   shader_program =
+      std::make_unique< opengl::gl::ShaderProgram >();
+
+   shader_program->AttachShader(
+      vertex);
+   shader_program->AttachShader(
+      fragment);
+
+   std::cout
+      << shader_program->LinkProgram()
+      << "\n\n";
+}
+
 void OpenGLWidget::paintGL( )
 {
    //glEnable(
@@ -258,6 +320,11 @@ void OpenGLWidget::paintGL( )
    //glBlendFunc(
    //   GL_SRC_ALPHA,
    //   GL_ONE_MINUS_SRC_ALPHA);
+
+   if (!shader_program)
+   {
+      CreateShader();
+   }
 
    glClear(
       GL_COLOR_BUFFER_BIT |
@@ -277,6 +344,62 @@ void OpenGLWidget::paintGL( )
    glMatrixMode(
       GL_MODELVIEW);
    glLoadIdentity();
+
+   {
+      opengl::gl::BindShaderProgram bind_sp {
+         shader_program.get() };
+
+      opengl::gl::VertexBuffer buffer {
+         GL_DYNAMIC_DRAW_ARB };
+
+      float vertices[] {
+         0.0f, float(h), 0.0f, 1.0f, 0.0f,
+         0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+         float(w), 0.0f, 0.0f, 1.0f, 1.0f
+      };
+      buffer.SetData(
+         vertices,
+         std::size(vertices));
+
+      opengl::gl::VertexArray array;
+
+      array.EnableVertexAttribute(
+         0);
+      array.BindVertexBuffer(
+         buffer,
+         0,
+         0,
+         5 * sizeof(float));
+      array.BindVertexAttribute(
+         0,
+         0,
+         3,
+         GL_FLOAT,
+         GL_FALSE,
+         0);
+      
+      array.EnableVertexAttribute(
+         1);
+      array.BindVertexBuffer(
+         buffer,
+         1,
+         0,
+         5 * sizeof(float));
+      array.BindVertexAttribute(
+         1,
+         1,
+         2,
+         GL_FLOAT,
+         GL_FALSE,
+         3 * sizeof(float));
+
+      opengl::gl::BindVertexArray bind_vao {
+         &array };
+
+      glDrawArrays(
+         GL_TRIANGLES,
+         0, 3);
+   }
 
 #define RENDER_AS_WORD_PROCESSOR 1
 #if RENDER_AS_WORD_PROCESSOR

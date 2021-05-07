@@ -6,16 +6,9 @@
 #include "gl_bind_texture.h"
 #include "gl_enable_client_state.h"
 #include "gl_enable_state.h"
+#include "gl_includes.h"
 #include "gl_push_matrix.h"
 #include "gl_validate.h"
-
-#if _WIN32
-#include <windows.h>
-#else
-#error "Define for this platform!"
-#endif // _WIN32
-
-#include <gl/gl.h>
 
 #include <utility>
 
