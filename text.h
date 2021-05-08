@@ -5,10 +5,17 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <vector>
+#include <utility>
 
 namespace opengl
 {
+
+namespace gl
+{
+class ShaderProgram;
+class VertexBuffer;
+class VertexArray;
+} // namespace gl
 
 class FontEngine;
 
@@ -27,8 +34,6 @@ public:
       const std::string & font_filename,
       const uint32_t size,
       const FontEngineType font_engine_type ) noexcept;
-
-   bool IsValid( ) const noexcept;
 
    bool Render( ) noexcept;
 
@@ -77,9 +82,21 @@ public:
    size_t GetTextSize( ) const noexcept;
 
 private:
+   struct GLData
+   {
+      std::unique_ptr< gl::ShaderProgram >
+         shader_program_;
+      std::unique_ptr< gl::VertexBuffer >
+         vertex_buffer_;
+      std::unique_ptr< gl::VertexArray >
+         vertex_array_;
+   };
+
    void RegenerateVertices( ) noexcept;
    void RegenerateTexture( ) noexcept;
-   void RenderText( ) noexcept;
+   bool RenderText( ) noexcept;
+
+   GLData InitializeGLData( ) noexcept;
 
    std::shared_ptr< FontEngine >
       font_engine_;
@@ -97,8 +114,8 @@ private:
    float scale_;
    float position_[3];
 
-   std::vector< float > vertices_;
-   std::vector< float > texture_coords_;
+   std::pair< bool, GLData >
+      gl_data_;
 
 };
 

@@ -85,6 +85,7 @@ private:
    GLuint vertex_buffer_;
 
    size_t size_;
+   size_t max_size_;
    
    const GLenum usage_;
    

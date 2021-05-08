@@ -38,6 +38,8 @@ add_executable(
    gl_bind_texture.h
    gl_bind_vertex_array.cpp
    gl_bind_vertex_array.h
+   gl_enable_blend.cpp
+   gl_enable_blend.h
    gl_enable_client_state.cpp
    gl_enable_client_state.h
    gl_enable_state.cpp

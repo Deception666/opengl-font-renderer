@@ -50,6 +50,7 @@ static std::string string;
 
 std::unique_ptr< opengl::Text > text;
 std::unique_ptr< opengl::gl::ShaderProgram > shader_program;
+std::unique_ptr< opengl::gl::VertexBuffer > vertex_buffer;
 
 void font_test( )
 {
@@ -98,6 +99,7 @@ public:
 
       text.reset();
       shader_program.reset();
+      vertex_buffer.reset();
 
       doneCurrent();
    }
@@ -315,12 +317,6 @@ void CreateShader( ) noexcept
 
 void OpenGLWidget::paintGL( )
 {
-   //glEnable(
-   //   GL_BLEND);
-   //glBlendFunc(
-   //   GL_SRC_ALPHA,
-   //   GL_ONE_MINUS_SRC_ALPHA);
-
    if (!shader_program)
    {
       CreateShader();
@@ -349,17 +345,38 @@ void OpenGLWidget::paintGL( )
       opengl::gl::BindShaderProgram bind_sp {
          shader_program.get() };
 
-      opengl::gl::VertexBuffer buffer {
-         GL_DYNAMIC_DRAW_ARB };
+      if (!vertex_buffer)
+      {
+         vertex_buffer =
+            std::make_unique< opengl::gl::VertexBuffer >(
+               GL_DYNAMIC_DRAW_ARB);
+      }
+
+      opengl::gl::VertexBuffer & buffer =
+         *vertex_buffer;
+      static int count { 1 };
 
       float vertices[] {
          0.0f, float(h), 0.0f, 1.0f, 0.0f,
          0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-         float(w), 0.0f, 0.0f, 1.0f, 1.0f
+         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
+
+         0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+         float(w), 0.0f, 0.0f, 0.0f, 1.0f,
+         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
+
+         float(w), 0.0f, 0.0f, 1.0f, 0.0f,
+         float(w), float(h), 0.0f, 0.0f, 1.0f,
+         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
+
+         float(w), float(h), 0.0f, 1.0f, 0.0f,
+         0.0f, float(h), 0.0f, 0.0f, 1.0f,
+         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f
       };
+      auto cur_count = ++count % 4 + 1;
       buffer.SetData(
          vertices,
-         std::size(vertices));
+         15 * cur_count);
 
       opengl::gl::VertexArray array;
 
@@ -380,13 +397,13 @@ void OpenGLWidget::paintGL( )
       
       array.EnableVertexAttribute(
          1);
-      array.BindVertexBuffer(
-         buffer,
-         1,
-         0,
-         5 * sizeof(float));
+      //array.BindVertexBuffer(
+      //   buffer,
+      //   1,
+      //   0,
+      //   5 * sizeof(float));
       array.BindVertexAttribute(
-         1,
+         0,
          1,
          2,
          GL_FLOAT,
@@ -398,7 +415,7 @@ void OpenGLWidget::paintGL( )
 
       glDrawArrays(
          GL_TRIANGLES,
-         0, 3);
+         0, 3 * cur_count);
    }
 
 #define RENDER_AS_WORD_PROCESSOR 1
@@ -417,9 +434,9 @@ void OpenGLWidget::paintGL( )
 
    if (text)
    {
+      text->SetText(std::move(s));
       text->SetScale(scale);
       text->SetPosition(0.0f, height() - text->GetFontMaxTop() * scale, 0.0f);
-      text->SetText(std::move(s));
       text->Render();
    }
 
@@ -604,9 +621,6 @@ void OpenGLWidget::paintGL( )
    update();
 
 #endif // RENDER_AS_WORD_PROCESSOR
-
-   //glDisable(
-   //   GL_BLEND);
 }
 
 int32_t main(

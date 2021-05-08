@@ -132,14 +132,22 @@ void VertexArray::DisableVertexAttribute(
 
 void VertexArray::Activate( ) noexcept
 {
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
    glBindVertexArray(
       vertex_array_);
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 void VertexArray::Deactivate( ) noexcept
 {
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
    glBindVertexArray(
       0);
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 }} // namespace opengl::gl

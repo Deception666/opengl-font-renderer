@@ -2,6 +2,7 @@
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace opengl {
@@ -11,6 +12,7 @@ VertexBuffer::VertexBuffer(
    const GLenum usage ) :
 vertex_buffer_ { },
 size_ { },
+max_size_ { },
 usage_ { usage },
 glGenBuffers { GetProcAddress("glGenBuffers", glGenBuffers) },
 glDeleteBuffers { GetProcAddress("glDeleteBuffers", glDeleteBuffers) },
@@ -39,6 +41,12 @@ glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubDa
          std::runtime_error(
             "Unable to create a buffer object!");
    }
+
+   glNamedBufferData(
+      vertex_buffer_,
+      0,
+      nullptr,
+      usage_);
 
    VALIDATE_NO_GL_ERROR();
 }
@@ -74,7 +82,7 @@ bool VertexBuffer::SetData(
 
    bool set { false };
 
-   if (!data || data_size > size_)
+   if (data_size > max_size_)
    {
       glNamedBufferData(
          vertex_buffer_,
@@ -82,7 +90,7 @@ bool VertexBuffer::SetData(
          data,
          usage_);
    }
-   else
+   else if (data)
    {
       glNamedBufferSubData(
          vertex_buffer_,
@@ -92,6 +100,9 @@ bool VertexBuffer::SetData(
    }
 
    size_ = data_size;
+   
+   max_size_ =
+      std::max(max_size_, size_);
 
    set = true;
 

@@ -3,14 +3,22 @@
 #include "font_engine_factory.h"
 #include "font_engine_type.h"
 #include "font_texture_manager.h"
+#include "gl_bind_shader_program.h"
 #include "gl_bind_texture.h"
-#include "gl_enable_client_state.h"
+#include "gl_bind_vertex_array.h"
+#include "gl_enable_blend.h"
 #include "gl_enable_state.h"
 #include "gl_includes.h"
 #include "gl_push_matrix.h"
+#include "gl_shader.h"
+#include "gl_shader_program.h"
 #include "gl_validate.h"
+#include "gl_vertex_array.h"
+#include "gl_vertex_buffer.h"
 
-#include <utility>
+#include <exception>
+#include <stdexcept>
+#include <vector>
 
 namespace opengl
 {
@@ -49,30 +57,35 @@ font_engine_ {
 update_ { true },
 release_texture_ { false },
 scale_ { 1.0f },
-position_ { }
+position_ { },
+gl_data_ { false, GLData { } }
 {
-}
-
-bool Text::IsValid( ) const noexcept
-{
-   return
-      font_engine_ != nullptr;
 }
 
 bool Text::Render( ) noexcept
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
+   if (!gl_data_.first)
+   {
+      gl_data_.second =
+         InitializeGLData();
+   
+      gl_data_.first = true;
+   }
+
    if (update_)
    {
       RegenerateVertices();
    }
 
-   RenderText();
+   const bool rendered =
+      RenderText();
 
    VALIDATE_NO_GL_ERROR();
 
-   return true;
+   return
+      rendered;
 }
 
 bool Text::SetFont(
@@ -335,61 +348,61 @@ static void GenerateVertices(
    const float x_left,
    const float y_bottom,
    const FontEngine::Metric & glyph_metric,
-   std::vector< float > & vertices,
-   std::vector< float > & texture_coords ) noexcept
+   std::vector< float > & verts_tex_coords ) noexcept
 {
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left);
+   verts_tex_coords.emplace_back(y_bottom + glyph_metric.height);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.left);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.top);
-   vertices.emplace_back(x_left);
-   vertices.emplace_back(y_bottom + glyph_metric.height);
-   vertices.emplace_back(0.0f);
 
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left);
+   verts_tex_coords.emplace_back(y_bottom);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.left);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.bottom);
-   vertices.emplace_back(x_left);
-   vertices.emplace_back(y_bottom);
-   vertices.emplace_back(0.0f);
 
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left + glyph_metric.width);
+   verts_tex_coords.emplace_back(y_bottom);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.right);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.bottom);
-   vertices.emplace_back(x_left + glyph_metric.width);
-   vertices.emplace_back(y_bottom);
-   vertices.emplace_back(0.0f);
 
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left);
+   verts_tex_coords.emplace_back(y_bottom + glyph_metric.height);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.left);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.top);
-   vertices.emplace_back(x_left);
-   vertices.emplace_back(y_bottom + glyph_metric.height);
-   vertices.emplace_back(0.0f);
 
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left + glyph_metric.width);
+   verts_tex_coords.emplace_back(y_bottom);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.right);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.bottom);
-   vertices.emplace_back(x_left + glyph_metric.width);
-   vertices.emplace_back(y_bottom);
-   vertices.emplace_back(0.0f);
 
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(x_left + glyph_metric.width);
+   verts_tex_coords.emplace_back(y_bottom + glyph_metric.height);
+   verts_tex_coords.emplace_back(0.0f);
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.right);
-   texture_coords.emplace_back(
+   verts_tex_coords.emplace_back(
       glyph_metric.tex_coords.normalized.top);
-   vertices.emplace_back(x_left + glyph_metric.width);
-   vertices.emplace_back(y_bottom + glyph_metric.height);
-   vertices.emplace_back(0.0f);
 }
 
 void Text::RegenerateVertices( ) noexcept
 {
-   if (font_engine_)
+   if (font_engine_ &&
+       gl_data_.second.vertex_buffer_)
    {
       if (release_texture_)
       {
@@ -401,8 +414,7 @@ void Text::RegenerateVertices( ) noexcept
       font_engine_texture_ =
          font_engine_->GetGlyphTextureMap().texture_map;
 
-      vertices_.clear();
-      texture_coords_.clear();
+      std::vector< float > verts_tex_coords;
 
       float pen_x { };
       float pen_y { };
@@ -435,8 +447,7 @@ void Text::RegenerateVertices( ) noexcept
                      x_left,
                      y_bottom,
                      *glyph,
-                     vertices_,
-                     texture_coords_);
+                     verts_tex_coords);
                }
 
                pen_x += glyph->advance;
@@ -449,6 +460,15 @@ void Text::RegenerateVertices( ) noexcept
       {
          RegenerateTexture();
       }
+
+      const auto data =
+         !verts_tex_coords.empty() ?
+         verts_tex_coords.data() :
+         nullptr;
+
+      gl_data_.second.vertex_buffer_->SetData(
+         data,
+         verts_tex_coords.size());
    }
 
    update_ = false;
@@ -499,39 +519,35 @@ void Text::RegenerateTexture( ) noexcept
    }
 }
 
-void Text::RenderText( ) noexcept
+bool Text::RenderText( ) noexcept
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-   if (!vertices_.empty() &&
-       !texture_coords_.empty() &&
-       font_texture_ && *font_texture_)
-   {
-      const gl::EnableClientState vertex_array {
-         GL_VERTEX_ARRAY };
-      const gl::EnableClientState tex_coord_array {
-         GL_TEXTURE_COORD_ARRAY };
+   const bool render =
+      gl_data_.second.shader_program_ &&
+      gl_data_.second.vertex_array_ &&
+      gl_data_.second.vertex_buffer_ &&
+      gl_data_.second.vertex_buffer_->GetSize() &&
+      font_texture_ && *font_texture_;
 
+   if (render)
+   {
       const gl::BindTexutre bind_texture {
          GL_TEXTURE_2D,
-         *font_texture_ };
+         *font_texture_,
+         GL_TEXTURE0_ARB };
 
       const gl::EnableState enable_tex_2d {
          GL_TEXTURE_2D };
 
+      const gl::EnableBlend enable_blend {
+         GL_SRC_ALPHA,
+         GL_SRC_ALPHA,
+         GL_ONE_MINUS_SRC_ALPHA,
+         GL_ONE_MINUS_SRC_ALPHA };
+
       const gl::PushMatrix push_matrix {
          GL_MODELVIEW };
-
-      glVertexPointer(
-         3,
-         GL_FLOAT,
-         0,
-         vertices_.data());
-      glTexCoordPointer(
-         2,
-         GL_FLOAT,
-         0,
-         texture_coords_.data());
 
       glTranslatef(
          position_[0],
@@ -542,13 +558,215 @@ void Text::RenderText( ) noexcept
          scale_,
          scale_);
 
+      const gl::BindShaderProgram bind_shader_program {
+         gl_data_.second.shader_program_.get() };
+
+      const gl::BindVertexArray bind_vertex_array {
+         gl_data_.second.vertex_array_.get() };
+
+      const auto vertex_count =
+         gl_data_.second.vertex_buffer_->GetSize< float >() / 5;
+
       glDrawArrays(
          GL_TRIANGLES,
          0,
-         vertices_.size() / 3);
+         vertex_count);
    }
 
    VALIDATE_NO_GL_ERROR();
+
+   return
+      render;
+}
+
+std::unique_ptr< gl::ShaderProgram >
+CreateShaderProgram( )
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   gl::Shader vertex_shader {
+      GL_VERTEX_SHADER_ARB
+   };
+
+   auto error =
+      vertex_shader.SetSource(
+         R"(#version 420 compatibility
+            layout (location = 0) in vec3 position;
+            layout (location = 1) in vec2 tex_coord;
+
+            out VS_OUT
+            {
+               smooth vec2 tex_coord;
+            } fragment_shader_in;
+
+            void main( )
+            {
+               // gl_ModelViewProjectionMatrix is only able to be
+               // used in compatibility mode of the gl context.
+               // we also need to define compatibility of the shader
+               // to be able to pull in compatibility features.
+               gl_Position =
+                  gl_ModelViewProjectionMatrix *
+                  vec4(position, 1.0f);
+
+               fragment_shader_in.tex_coord =
+                  tex_coord;
+            }
+         )");
+
+   if (!error.empty())
+   {
+      throw
+         std::runtime_error {
+            "Unable to create vertex shader: " + error
+         };
+   }
+
+   gl::Shader fragment_shader {
+      GL_FRAGMENT_SHADER_ARB
+   };
+
+   error =
+      fragment_shader.SetSource(
+         R"(#version 420 compatibility
+            layout (binding = 0) uniform sampler2D glyph_texture;
+
+            layout (location = 0) out vec4 frag_color;
+
+            in VS_OUT
+            {
+               smooth vec2 tex_coord;
+            } fragment_shader_in;
+            
+            void main( )
+            {
+               float tex_value =
+                  texture(
+                     glyph_texture,
+                     fragment_shader_in.tex_coord).r;
+
+               if (tex_value == 0.0f)
+                  discard;
+
+               frag_color =
+                  vec4(1.0f, 1.0f, 1.0f, tex_value);
+            }
+         )");
+
+   if (!error.empty())
+   {
+      throw
+         std::runtime_error {
+            "Unable to create fragment shader: " + error
+         };
+   }
+
+   auto shader_program =
+      std::make_unique< gl::ShaderProgram >();
+
+   shader_program->AttachShader(
+      vertex_shader);
+   shader_program->AttachShader(
+      fragment_shader);
+
+   error =
+      shader_program->LinkProgram();
+
+   if (!error.empty())
+   {
+      throw
+         std::runtime_error {
+            "Unable to create shader program: " + error
+         };
+   }
+
+   VALIDATE_NO_GL_ERROR();
+
+   return
+      shader_program;
+}
+
+std::unique_ptr< gl::VertexArray >
+CreateVertexArray(
+   const gl::VertexBuffer & vertex_buffer )
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   auto vertex_array =
+      std::make_unique< gl::VertexArray >();
+
+   vertex_array->EnableVertexAttribute(
+      0);
+   vertex_array->BindVertexBuffer(
+      vertex_buffer,
+      0,
+      0,
+      5 * sizeof(float));
+   vertex_array->BindVertexAttribute(
+      0,
+      0,
+      3,
+      GL_FLOAT,
+      GL_FALSE,
+      0);
+
+   vertex_array->EnableVertexAttribute(
+      1);
+   vertex_array->BindVertexAttribute(
+      0,
+      1,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      3 * sizeof(float));
+
+   VALIDATE_NO_GL_ERROR();
+
+   return
+      vertex_array;
+}
+
+Text::GLData Text::InitializeGLData( ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   GLData data;
+
+   try
+   {
+      // todo: report if opengl is not 4.5 or
+      // if direct state is not supported
+
+      auto shader_program =
+         CreateShaderProgram();
+
+      auto vertex_buffer =
+         std::make_unique< gl::VertexBuffer >(
+            GL_DYNAMIC_DRAW_ARB);
+
+      vertex_buffer->SetData(
+         nullptr,
+         0);
+
+      auto vertex_array =
+         CreateVertexArray(
+            *vertex_buffer);
+
+      data.shader_program_.swap(
+         shader_program);
+      data.vertex_buffer_.swap(
+         vertex_buffer);
+      data.vertex_array_.swap(
+         vertex_array);
+   }
+   catch (const std::exception & e)
+   {
+      // todo: add error reporting
+   }
+
+   VALIDATE_NO_GL_ERROR();
+
+   return data;
 }
 
 } // namespace opengl
