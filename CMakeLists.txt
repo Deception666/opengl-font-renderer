@@ -19,6 +19,9 @@ endif ( )
 add_executable(
    font-render
    calling_convention.h
+   error_reporting.h
+   error_reporting_private.cpp
+   error_reporting_private.h
    font_engine.h
    font_engine_default.cpp
    font_engine_default.h
@@ -44,6 +47,8 @@ add_executable(
    gl_enable_client_state.h
    gl_enable_state.cpp
    gl_enable_state.h
+   gl_extensions.cpp
+   gl_extensions.h
    gl_get_proc_address.h
    gl_includes.h
    gl_push_matrix.cpp

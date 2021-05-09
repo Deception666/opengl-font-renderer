@@ -1,4 +1,5 @@
 #include "gl_enable_blend.h"
+#include "error_reporting_private.h"
 #include "calling_convention.h"
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
@@ -69,7 +70,10 @@ glBlendFuncSeparateFuncPtr GetGLBlendFuncSeparate( ) noexcept
 
          if (!glBlendFuncSeparate)
          {
-            // todo: report as error
+            ReportError(
+               "Unable to obtain function pointer "
+               "for glBlendFuncSeparate.  Blending "
+               "operations may be compromised.");
          }
       });
 

@@ -1,4 +1,5 @@
 #include "gl_bind_texture.h"
+#include "error_reporting_private.h"
 #include "calling_convention.h"
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
@@ -35,7 +36,10 @@ glActiveTextureFuncPtr GetGLActiveTexture( ) noexcept
 
          if (!glActiveTexture)
          {
-            // todo: report as error
+            ReportError(
+               "Unable to obtain function pointer "
+               "for glActiveTexture.  Texture "
+               "operations may be compromised.");
          }
       });
 

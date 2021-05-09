@@ -1,4 +1,5 @@
 #include "text.h"
+#include "error_reporting_private.h"
 #include "font_engine.h"
 #include "font_engine_factory.h"
 #include "font_engine_type.h"
@@ -8,6 +9,7 @@
 #include "gl_bind_vertex_array.h"
 #include "gl_enable_blend.h"
 #include "gl_enable_state.h"
+#include "gl_extensions.h"
 #include "gl_includes.h"
 #include "gl_push_matrix.h"
 #include "gl_shader.h"
@@ -19,6 +21,14 @@
 #include <exception>
 #include <stdexcept>
 #include <vector>
+
+#ifndef GL_MAJOR_VERSION
+#define GL_MAJOR_VERSION   0x821B
+#endif
+
+#ifndef GL_MINOR_VERSION
+#define GL_MINOR_VERSION   0x821C
+#endif
 
 namespace opengl
 {
@@ -726,6 +736,48 @@ CreateVertexArray(
       vertex_array;
 }
 
+void ValidateOpenGL( )
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   GLint version_major { };
+   GLint version_minor { };
+
+   glGetIntegerv(
+      GL_MAJOR_VERSION,
+      &version_major);
+   glGetIntegerv(
+      GL_MINOR_VERSION,
+      &version_minor);
+
+   const uint32_t MIN_GL_VERSION {
+      4u << 16 | 5u
+   };
+
+   const uint32_t gl_version {
+      static_cast< uint32_t >(version_major) << 16 |
+      static_cast< uint32_t >(version_minor)
+   };
+
+   if (MIN_GL_VERSION > gl_version)
+   {
+      const bool dsa_supported =
+         gl::ExtensionIsSupported(
+            "GL_ARB_direct_state_access");
+
+      if (!dsa_supported)
+      {
+         throw
+            std::runtime_error {
+               "OpenGL version must be 4.5 or greater or "
+               "the context must support direct state access."
+            };
+      }
+   }
+
+   VALIDATE_NO_GL_ERROR();
+}
+
 Text::GLData Text::InitializeGLData( ) noexcept
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
@@ -734,8 +786,7 @@ Text::GLData Text::InitializeGLData( ) noexcept
 
    try
    {
-      // todo: report if opengl is not 4.5 or
-      // if direct state is not supported
+      ValidateOpenGL();
 
       auto shader_program =
          CreateShaderProgram();
@@ -761,7 +812,8 @@ Text::GLData Text::InitializeGLData( ) noexcept
    }
    catch (const std::exception & e)
    {
-      // todo: add error reporting
+      ReportError(
+         e.what());
    }
 
    VALIDATE_NO_GL_ERROR();

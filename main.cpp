@@ -41,6 +41,7 @@
 #include "gl_vertex_buffer.h"
 #include "gl_vertex_array.h"
 #include "gl_bind_vertex_array.h"
+#include "error_reporting.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
@@ -75,6 +76,13 @@ void font_test( )
    
    if (!text)
    {
+      opengl::SetErrorCallback(
+         [ ] (
+            const char * const error )
+         {
+            std::cout << error << "\n\n";
+         });
+
       text =
          std::make_unique< opengl::Text >(
             fonts[index],

@@ -1,4 +1,5 @@
 #include "freetype.h"
+#include "error_reporting_private.h"
 
 #include <algorithm>
 #include <exception>
@@ -140,7 +141,8 @@ FreeType::Create( ) noexcept
       }
       catch (const std::exception & e)
       {
-         // exception thrown
+         ReportError(
+            e.what());
       }
    }
 
