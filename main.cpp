@@ -42,6 +42,9 @@
 #include "gl_vertex_array.h"
 #include "gl_bind_vertex_array.h"
 #include "error_reporting.h"
+#include "gl_uniform_buffer.h"
+#include "gl_get_proc_address.h"
+#include "gl_bind_uniform_buffer.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
@@ -52,6 +55,7 @@ static std::string string;
 std::unique_ptr< opengl::Text > text;
 std::unique_ptr< opengl::gl::ShaderProgram > shader_program;
 std::unique_ptr< opengl::gl::VertexBuffer > vertex_buffer;
+std::unique_ptr< opengl::gl::UniformBuffer > uniform_buffer;
 
 void font_test( )
 {
@@ -108,6 +112,7 @@ public:
       text.reset();
       shader_program.reset();
       vertex_buffer.reset();
+      uniform_buffer.reset();
 
       doneCurrent();
    }
@@ -279,9 +284,6 @@ void CreateShader( ) noexcept
       << vertex.SetSource(
             R"(#version 400 compatibility
                layout (location = 0) in vec3 vertices;
-               layout (location = 1) in vec2 tex_coords;
-
-               smooth out vec3 color;
 
                void main( )
                {
@@ -289,8 +291,6 @@ void CreateShader( ) noexcept
                      gl_ProjectionMatrix *
                      gl_ModelViewMatrix *
                      vec4(vertices, 1.0f);
-
-                  color = vec3(tex_coords, 0.0f);
                })")
       << "\n\n";
 
@@ -299,10 +299,13 @@ void CreateShader( ) noexcept
 
    std::cout
       << fragment.SetSource(
-            R"(#version 400 compatibility
+            R"(#version 420 compatibility
                layout (location = 0) out vec4 fragment_color;
 
-               smooth in vec3 color;
+               layout (std140) uniform udata
+               {
+                  vec3 color;
+               };
 
                void main( )
                {
@@ -321,6 +324,10 @@ void CreateShader( ) noexcept
    std::cout
       << shader_program->LinkProgram()
       << "\n\n";
+
+   uniform_buffer =
+      std::make_unique< opengl::gl::UniformBuffer >(
+         GL_STREAM_DRAW_ARB);
 }
 
 void OpenGLWidget::paintGL( )
@@ -386,6 +393,18 @@ void OpenGLWidget::paintGL( )
          vertices,
          15 * cur_count);
 
+      const float color[] {
+         1.0f, 0.0f, 0.0f, 0.0f,
+         0.0f, 1.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 1.0f, 0.0f,
+         1.0f, 0.0f, 1.0f, 0.0f,
+         1.0f, 1.0f, 0.0f, 0.0f,
+         0.0f, 1.0f, 1.0f, 0.0f };
+
+   uniform_buffer->SetData(
+      color + 4 * (count % 6),
+      4 * sizeof(float));
+
       opengl::gl::VertexArray array;
 
       array.EnableVertexAttribute(
@@ -417,6 +436,11 @@ void OpenGLWidget::paintGL( )
          GL_FLOAT,
          GL_FALSE,
          3 * sizeof(float));
+
+      opengl::gl::BindUniformBuffer bind_ubo {
+         uniform_buffer.get(),
+         shader_program.get(),
+         "udata" };
 
       opengl::gl::BindVertexArray bind_vao {
          &array };

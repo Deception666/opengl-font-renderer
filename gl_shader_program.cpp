@@ -1,17 +1,10 @@
 #include "gl_shader_program.h"
+#include "gl_defines.h"
 #include "gl_get_proc_address.h"
 #include "gl_shader.h"
 #include "gl_validate.h"
 
 #include <stdexcept>
-
-#ifndef GL_LINK_STATUS
-#define GL_LINK_STATUS     0x8B82
-#endif
-
-#ifndef GL_INFO_LOG_LENGTH
-#define GL_INFO_LOG_LENGTH 0x8B84
-#endif
 
 namespace opengl {
 namespace gl {
@@ -24,14 +17,15 @@ glLinkProgram { GetProcAddress("glLinkProgram", glLinkProgram) },
 glUseProgram { GetProcAddress("glUseProgram", glUseProgram) },
 glDeleteProgram { GetProcAddress("glDeleteProgram", glDeleteProgram) },
 glGetProgramiv { GetProcAddress("glGetProgramiv", glGetProgramiv) },
-glGetProgramInfoLog { GetProcAddress("glGetProgramInfoLog", glGetProgramInfoLog) }
+glGetProgramInfoLog { GetProcAddress("glGetProgramInfoLog", glGetProgramInfoLog) },
+glGetUniformBlockIndex { GetProcAddress("glGetUniformBlockIndex", glGetUniformBlockIndex) }
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
    if (!glCreateProgram || !glAttachShader ||
        !glLinkProgram || !glUseProgram ||
        !glDeleteProgram || !glGetProgramiv ||
-       !glGetProgramInfoLog)
+       !glGetProgramInfoLog || !glGetUniformBlockIndex)
    {
       throw
          std::runtime_error(
@@ -92,6 +86,28 @@ std::string ShaderProgram::LinkProgram( ) noexcept
    VALIDATE_NO_GL_ERROR();
 
    return error;
+}
+
+GLuint ShaderProgram::GetUniformBlockIndex(
+   const char * const uniform_block_name ) const noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   GLuint index {
+      GL_INVALID_INDEX };
+
+   if (uniform_block_name)
+   {
+      index =
+         glGetUniformBlockIndex(
+            program_,
+            uniform_block_name);
+   }
+
+   VALIDATE_NO_GL_ERROR();
+
+   return
+      index;
 }
 
 void ShaderProgram::Activate( ) noexcept

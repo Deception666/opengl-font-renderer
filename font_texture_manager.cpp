@@ -1,5 +1,6 @@
 #include "font_texture_manager.h"
 #include "calling_convention.h"
+#include "gl_defines.h"
 #include "gl_includes.h"
 #include "gl_validate.h"
 #include "reverse_lock.h"
@@ -12,10 +13,6 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
-
-#ifndef GL_CLAMP_TO_BORDER
-#define GL_CLAMP_TO_BORDER 0x812D
-#endif
 
 namespace opengl {
 namespace font_texture_manager {

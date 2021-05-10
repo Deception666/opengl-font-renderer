@@ -6,14 +6,6 @@
 
 #include <string>
 
-#ifndef GL_VERTEX_SHADER_ARB
-#define GL_VERTEX_SHADER_ARB     0x8B31
-#endif
-
-#ifndef GL_FRAGMENT_SHADER_ARB
-#define GL_FRAGMENT_SHADER_ARB   0x8B30
-#endif
-
 namespace opengl {
 namespace gl {
 

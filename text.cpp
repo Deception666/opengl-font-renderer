@@ -7,6 +7,7 @@
 #include "gl_bind_shader_program.h"
 #include "gl_bind_texture.h"
 #include "gl_bind_vertex_array.h"
+#include "gl_defines.h"
 #include "gl_enable_blend.h"
 #include "gl_enable_state.h"
 #include "gl_extensions.h"
@@ -21,14 +22,6 @@
 #include <exception>
 #include <stdexcept>
 #include <vector>
-
-#ifndef GL_MAJOR_VERSION
-#define GL_MAJOR_VERSION   0x821B
-#endif
-
-#ifndef GL_MINOR_VERSION
-#define GL_MINOR_VERSION   0x821C
-#endif
 
 namespace opengl
 {

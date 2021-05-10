@@ -3,22 +3,6 @@
 
 #include "gl_includes.h"
 
-#ifndef GL_BLEND_DST_RGB
-#define GL_BLEND_DST_RGB      0x80C8
-#endif
-
-#ifndef GL_BLEND_SRC_RGB
-#define GL_BLEND_SRC_RGB      0x80C9
-#endif
-
-#ifndef GL_BLEND_DST_ALPHA
-#define GL_BLEND_DST_ALPHA    0x80CA
-#endif
-
-#ifndef GL_BLEND_SRC_ALPHA
-#define GL_BLEND_SRC_ALPHA    0x80CB
-#endif
-
 namespace opengl {
 namespace gl {
 

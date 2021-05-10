@@ -1,12 +1,9 @@
 #include "gl_extensions.h"
+#include "gl_defines.h"
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
 
 #include <cstring>
-
-#ifndef GL_NUM_EXTENSIONS
-#define GL_NUM_EXTENSIONS  0x821D
-#endif
 
 namespace opengl {
 namespace gl {

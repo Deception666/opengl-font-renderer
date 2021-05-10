@@ -39,8 +39,11 @@ add_executable(
    gl_bind_shader_program.h
    gl_bind_texture.cpp
    gl_bind_texture.h
+   gl_bind_uniform_buffer.cpp
+   gl_bind_uniform_buffer.h
    gl_bind_vertex_array.cpp
    gl_bind_vertex_array.h
+   gl_defines.h
    gl_enable_blend.cpp
    gl_enable_blend.h
    gl_enable_client_state.cpp
@@ -57,6 +60,8 @@ add_executable(
    gl_shader.h
    gl_shader_program.cpp
    gl_shader_program.h
+   gl_uniform_buffer.cpp
+   gl_uniform_buffer.h
    gl_validate.h
    gl_vertex_array.cpp
    gl_vertex_array.h

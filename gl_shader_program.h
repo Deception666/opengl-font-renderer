@@ -34,6 +34,9 @@ public:
 
    std::string LinkProgram( ) noexcept;
 
+   GLuint GetUniformBlockIndex(
+      const char * const uniform_block_name ) const noexcept;
+
    void Activate( ) noexcept;
    void Deactivate( ) noexcept;
 
@@ -49,6 +52,7 @@ private:
    void (CALL_CONV * const glDeleteProgram) ( GLuint );
    void (CALL_CONV * const glGetProgramiv) ( GLuint, GLenum, GLint * );
    void (CALL_CONV * const glGetProgramInfoLog) ( GLuint, GLsizei, GLsizei *, char * );
+   GLuint (CALL_CONV * const glGetUniformBlockIndex) ( GLuint, const char * );
 
 };
 

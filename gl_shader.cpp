@@ -1,16 +1,9 @@
 #include "gl_shader.h"
+#include "gl_defines.h"
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
 
 #include <stdexcept>
-
-#ifndef GL_COMPILE_STATUS
-#define GL_COMPILE_STATUS  0x8B81
-#endif
-
-#ifndef GL_INFO_LOG_LENGTH
-#define GL_INFO_LOG_LENGTH 0x8B84
-#endif
 
 namespace opengl {
 namespace gl {

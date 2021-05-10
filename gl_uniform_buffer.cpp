@@ -1,4 +1,4 @@
-#include "gl_vertex_buffer.h"
+#include "gl_uniform_buffer.h"
 #include "gl_defines.h"
 #include "gl_get_proc_address.h"
 #include "gl_validate.h"
@@ -9,9 +9,10 @@
 namespace opengl {
 namespace gl {
 
-VertexBuffer::VertexBuffer(
+UniformBuffer::UniformBuffer(
    const GLenum usage ) :
-vertex_buffer_ { },
+uniform_buffer_ { },
+active_block_index_ { GL_INVALID_INDEX },
 size_ { },
 max_size_ { },
 usage_ { usage },
@@ -19,32 +20,33 @@ glGenBuffers { GetProcAddress("glGenBuffers", glGenBuffers) },
 glDeleteBuffers { GetProcAddress("glDeleteBuffers", glDeleteBuffers) },
 glBindBuffer { GetProcAddress("glBindBuffer", glBindBuffer) },
 glNamedBufferData { GetProcAddress("glNamedBufferData", glNamedBufferData) },
-glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubData) }
+glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubData) },
+glBindBufferBase { GetProcAddress("glBindBufferBase", glBindBufferBase) }
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
    if (!glGenBuffers || !glDeleteBuffers ||
        !glBindBuffer || !glNamedBufferData ||
-       !glNamedBufferSubData)
+       !glNamedBufferSubData || !glBindBufferBase)
    {
       throw
          std::runtime_error(
-            "Not all gl buffer entry points defined!");
+            "Not all gl uniform buffer entry points defined!");
    }
 
    glGenBuffers(
       1,
-      &vertex_buffer_);
+      &uniform_buffer_);
 
-   if (!vertex_buffer_)
+   if (!uniform_buffer_)
    {
       throw
          std::runtime_error(
-            "Unable to create a buffer object!");
+            "Unable to create a uniform buffer object!");
    }
 
    glNamedBufferData(
-      vertex_buffer_,
+      uniform_buffer_,
       0,
       nullptr,
       usage_);
@@ -52,30 +54,30 @@ glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubDa
    VALIDATE_NO_GL_ERROR();
 }
 
-VertexBuffer::~VertexBuffer( ) noexcept
+UniformBuffer::~UniformBuffer( ) noexcept
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
    glDeleteBuffers(
       1,
-      &vertex_buffer_);
+      &uniform_buffer_);
 
    VALIDATE_NO_GL_ERROR();
 }
 
-GLuint VertexBuffer::GetID( ) const noexcept
+GLuint UniformBuffer::GetID( ) const noexcept
 {
    return
-      vertex_buffer_;
+      uniform_buffer_;
 }
 
-GLenum VertexBuffer::GetTarget( ) const noexcept
+GLenum UniformBuffer::GetTarget( ) const noexcept
 {
    return
-      GL_ARRAY_BUFFER_ARB;
+      GL_UNIFORM_BUFFER;
 }
 
-bool VertexBuffer::SetData(
+bool UniformBuffer::SetData(
    const void * const data,
    const size_t data_size ) noexcept
 {
@@ -86,7 +88,7 @@ bool VertexBuffer::SetData(
    if (data_size > max_size_)
    {
       glNamedBufferData(
-         vertex_buffer_,
+         uniform_buffer_,
          data_size,
          data,
          usage_);
@@ -94,7 +96,7 @@ bool VertexBuffer::SetData(
    else if (data)
    {
       glNamedBufferSubData(
-         vertex_buffer_,
+         uniform_buffer_,
          0,
          data_size,
          data);
@@ -112,10 +114,49 @@ bool VertexBuffer::SetData(
    return set;
 }
 
-size_t VertexBuffer::GetSize( ) const noexcept
+size_t UniformBuffer::GetSize( ) const noexcept
 {
    return
       size_;
+}
+
+void UniformBuffer::Activate(
+   const GLuint block_index ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   Deactivate();
+
+   if (GL_INVALID_INDEX != block_index)
+   {
+      glBindBufferBase(
+         GL_UNIFORM_BUFFER,
+         block_index,
+         uniform_buffer_);
+
+      active_block_index_ =
+         block_index;
+   }
+
+   VALIDATE_NO_GL_ERROR();
+}
+
+void UniformBuffer::Deactivate( ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   if (GL_INVALID_INDEX != active_block_index_)
+   {
+      glBindBufferBase(
+         GL_UNIFORM_BUFFER,
+         active_block_index_,
+         0);
+
+      active_block_index_ =
+         GL_INVALID_INDEX;
+   }
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 }} // namespace opengl::gl

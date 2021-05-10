@@ -6,46 +6,6 @@
 
 #include <cstddef>
 
-#ifndef GL_ARRAY_BUFFER_ARB
-#define GL_ARRAY_BUFFER_ARB   0x8892
-#endif
-
-#ifndef GL_STREAM_DRAW_ARB
-#define GL_STREAM_DRAW_ARB    0x88E0
-#endif
-
-#ifndef GL_STREAM_READ_ARB
-#define GL_STREAM_READ_ARB    0x88E1
-#endif
-
-#ifndef GL_STREAM_COPY_ARB
-#define GL_STREAM_COPY_ARB    0x88E2
-#endif
-
-#ifndef GL_STATIC_DRAW_ARB
-#define GL_STATIC_DRAW_ARB    0x88E4
-#endif
-
-#ifndef GL_STATIC_READ_ARB
-#define GL_STATIC_READ_ARB    0x88E5
-#endif
-
-#ifndef GL_STATIC_COPY_ARB
-#define GL_STATIC_COPY_ARB    0x88E6
-#endif
-
-#ifndef GL_DYNAMIC_DRAW_ARB
-#define GL_DYNAMIC_DRAW_ARB   0x88E8
-#endif
-
-#ifndef GL_DYNAMIC_READ_ARB
-#define GL_DYNAMIC_READ_ARB   0x88E9
-#endif
-
-#ifndef GL_DYNAMIC_COPY_ARB
-#define GL_DYNAMIC_COPY_ARB   0x88EA
-#endif
-
 namespace opengl {
 namespace gl {
 

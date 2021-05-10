@@ -1,8 +1,6 @@
 #ifndef _OPENGL_GL_BIND_VERTEX_ARRAY_H_
 #define _OPENGL_GL_BIND_VERTEX_ARRAY_H_
 
-#include "gl_includes.h"
-
 namespace opengl {
 namespace gl {
 
