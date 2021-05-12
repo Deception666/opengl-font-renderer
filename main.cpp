@@ -17,34 +17,8 @@
 //#include <ft2build.h>
 //#include <freetype/freetype.h>
 
-#if _WIN32
-
-#if _M_IX86
-#define CALL_CONV __stdcall
-#elif _M_X64
-#define CALL_CONV
-#else
-#define "Define for this platform type!"
-#endif
-
-#endif // _WIN32
-
-#include "font_engine_factory.h"
-#include "font_engine_freetype.h"
-#include "font_engine_default.h"
-#include "font_texture_manager.h"
-#include "font_engine_type.h"
 #include "text.h"
-#include "gl_shader.h"
-#include "gl_shader_program.h"
-#include "gl_bind_shader_program.h"
-#include "gl_vertex_buffer.h"
-#include "gl_vertex_array.h"
-#include "gl_bind_vertex_array.h"
 #include "error_reporting.h"
-#include "gl_uniform_buffer.h"
-#include "gl_get_proc_address.h"
-#include "gl_bind_uniform_buffer.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
@@ -53,9 +27,6 @@ size_t font_index { 0 };
 static std::string string;
 
 std::unique_ptr< opengl::Text > text;
-std::unique_ptr< opengl::gl::ShaderProgram > shader_program;
-std::unique_ptr< opengl::gl::VertexBuffer > vertex_buffer;
-std::unique_ptr< opengl::gl::UniformBuffer > uniform_buffer;
 
 void font_test( )
 {
@@ -91,6 +62,8 @@ void font_test( )
          std::make_unique< opengl::Text >(
             fonts[index],
             size);
+
+      text->SetColor(1.0f, 1.0f, 1.0f);
    }
    else
    {
@@ -110,9 +83,6 @@ public:
       makeCurrent();
 
       text.reset();
-      shader_program.reset();
-      vertex_buffer.reset();
-      uniform_buffer.reset();
 
       doneCurrent();
    }
@@ -275,67 +245,8 @@ void OpenGLWidget::resizeGL(
 //      bounding_box;
 //}
 
-void CreateShader( ) noexcept
-{
-   opengl::gl::Shader vertex {
-      GL_VERTEX_SHADER_ARB };
-
-   std::cout
-      << vertex.SetSource(
-            R"(#version 400 compatibility
-               layout (location = 0) in vec3 vertices;
-
-               void main( )
-               {
-                  gl_Position =
-                     gl_ProjectionMatrix *
-                     gl_ModelViewMatrix *
-                     vec4(vertices, 1.0f);
-               })")
-      << "\n\n";
-
-   opengl::gl::Shader fragment {
-      GL_FRAGMENT_SHADER_ARB };
-
-   std::cout
-      << fragment.SetSource(
-            R"(#version 420 compatibility
-               layout (location = 0) out vec4 fragment_color;
-
-               layout (std140) uniform udata
-               {
-                  vec3 color;
-               };
-
-               void main( )
-               {
-                  fragment_color = vec4(color, 1.0f);
-               })")
-      << "\n\n";
-
-   shader_program =
-      std::make_unique< opengl::gl::ShaderProgram >();
-
-   shader_program->AttachShader(
-      vertex);
-   shader_program->AttachShader(
-      fragment);
-
-   std::cout
-      << shader_program->LinkProgram()
-      << "\n\n";
-
-   uniform_buffer =
-      std::make_unique< opengl::gl::UniformBuffer >(
-         GL_STREAM_DRAW_ARB);
-}
-
 void OpenGLWidget::paintGL( )
 {
-   if (!shader_program)
-   {
-      CreateShader();
-   }
 
    glClear(
       GL_COLOR_BUFFER_BIT |
@@ -355,100 +266,6 @@ void OpenGLWidget::paintGL( )
    glMatrixMode(
       GL_MODELVIEW);
    glLoadIdentity();
-
-   {
-      opengl::gl::BindShaderProgram bind_sp {
-         shader_program.get() };
-
-      if (!vertex_buffer)
-      {
-         vertex_buffer =
-            std::make_unique< opengl::gl::VertexBuffer >(
-               GL_DYNAMIC_DRAW_ARB);
-      }
-
-      opengl::gl::VertexBuffer & buffer =
-         *vertex_buffer;
-      static int count { 1 };
-
-      float vertices[] {
-         0.0f, float(h), 0.0f, 1.0f, 0.0f,
-         0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
-
-         0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-         float(w), 0.0f, 0.0f, 0.0f, 1.0f,
-         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
-
-         float(w), 0.0f, 0.0f, 1.0f, 0.0f,
-         float(w), float(h), 0.0f, 0.0f, 1.0f,
-         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f,
-
-         float(w), float(h), 0.0f, 1.0f, 0.0f,
-         0.0f, float(h), 0.0f, 0.0f, 1.0f,
-         float(w) / 2.0f, float(h) / 2.0f, 0.0f, 1.0f, 1.0f
-      };
-      auto cur_count = ++count % 4 + 1;
-      buffer.SetData(
-         vertices,
-         15 * cur_count);
-
-      const float color[] {
-         1.0f, 0.0f, 0.0f, 0.0f,
-         0.0f, 1.0f, 0.0f, 0.0f,
-         0.0f, 0.0f, 1.0f, 0.0f,
-         1.0f, 0.0f, 1.0f, 0.0f,
-         1.0f, 1.0f, 0.0f, 0.0f,
-         0.0f, 1.0f, 1.0f, 0.0f };
-
-   uniform_buffer->SetData(
-      color + 4 * (count % 6),
-      4 * sizeof(float));
-
-      opengl::gl::VertexArray array;
-
-      array.EnableVertexAttribute(
-         0);
-      array.BindVertexBuffer(
-         buffer,
-         0,
-         0,
-         5 * sizeof(float));
-      array.BindVertexAttribute(
-         0,
-         0,
-         3,
-         GL_FLOAT,
-         GL_FALSE,
-         0);
-      
-      array.EnableVertexAttribute(
-         1);
-      //array.BindVertexBuffer(
-      //   buffer,
-      //   1,
-      //   0,
-      //   5 * sizeof(float));
-      array.BindVertexAttribute(
-         0,
-         1,
-         2,
-         GL_FLOAT,
-         GL_FALSE,
-         3 * sizeof(float));
-
-      opengl::gl::BindUniformBuffer bind_ubo {
-         uniform_buffer.get(),
-         shader_program.get(),
-         "udata" };
-
-      opengl::gl::BindVertexArray bind_vao {
-         &array };
-
-      glDrawArrays(
-         GL_TRIANGLES,
-         0, 3 * cur_count);
-   }
 
 #define RENDER_AS_WORD_PROCESSOR 1
 #if RENDER_AS_WORD_PROCESSOR

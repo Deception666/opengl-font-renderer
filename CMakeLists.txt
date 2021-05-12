@@ -71,7 +71,8 @@ add_executable(
    qt.conf
    reverse_lock.h
    text.cpp
-   text.h)
+   text.h
+   text_uniform_data.h)
 
 find_package(
    Qt5

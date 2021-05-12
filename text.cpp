@@ -6,25 +6,35 @@
 #include "font_texture_manager.h"
 #include "gl_bind_shader_program.h"
 #include "gl_bind_texture.h"
+#include "gl_bind_uniform_buffer.h"
 #include "gl_bind_vertex_array.h"
 #include "gl_defines.h"
 #include "gl_enable_blend.h"
 #include "gl_enable_state.h"
 #include "gl_extensions.h"
 #include "gl_includes.h"
-#include "gl_push_matrix.h"
 #include "gl_shader.h"
 #include "gl_shader_program.h"
+#include "gl_uniform_buffer.h"
 #include "gl_validate.h"
 #include "gl_vertex_array.h"
 #include "gl_vertex_buffer.h"
+#include "text_uniform_data.h"
 
+#include <algorithm>
+#include <array>
 #include <exception>
+#include <new>
 #include <stdexcept>
 #include <vector>
 
 namespace opengl
 {
+
+Text::GLData::GLData( ) noexcept = default;
+Text::GLData::~GLData( ) noexcept = default;
+Text::GLData::GLData( GLData && ) noexcept = default;
+Text::GLData & Text::GLData::operator = ( GLData && ) noexcept = default;
 
 Text::Text( ) noexcept :
 #if _WIN32
@@ -57,12 +67,16 @@ font_engine_ {
       font_filename,
       size,
       font_engine_type) },
-update_ { true },
+regenerate_vertices_ { true },
 release_texture_ { false },
-scale_ { 1.0f },
-position_ { },
 gl_data_ { false, GLData { } }
 {
+   static_assert(
+      sizeof(GLData::gl_uniform_data_) == sizeof(TextUniformData),
+      "Increase gl_uniform_data_ size to match TextUniformData.");
+
+   new (gl_data_.second.gl_uniform_data_)
+      TextUniformData { true };
 }
 
 bool Text::Render( ) noexcept
@@ -77,9 +91,14 @@ bool Text::Render( ) noexcept
       gl_data_.first = true;
    }
 
-   if (update_)
+   if (regenerate_vertices_)
    {
       RegenerateVertices();
+   }
+
+   if (GetUniformData().update_)
+   {
+      UpdateUniformData();
    }
 
    const bool rendered =
@@ -102,8 +121,8 @@ bool Text::SetFont(
          font_engine_->SetFont(
             font_filename);
 
-      update_ =
-         update_ || set;
+      regenerate_vertices_ =
+         regenerate_vertices_ || set;
 
       release_texture_ =
          release_texture_ || set;
@@ -125,8 +144,8 @@ bool Text::SetFont(
             font_filename,
             size);
 
-      update_ =
-         update_ || set;
+      regenerate_vertices_ =
+         regenerate_vertices_ || set;
 
       release_texture_ =
          release_texture_ || set;
@@ -154,8 +173,8 @@ bool Text::SetFontSize(
          font_engine_->SetSize(
             size);
 
-      update_ =
-         update_ || set;
+      regenerate_vertices_ =
+         regenerate_vertices_ || set;
 
       release_texture_ =
          release_texture_ || set;
@@ -201,9 +220,14 @@ bool Text::SetPosition(
    const float y,
    const float z ) noexcept
 {
-   position_[0] = x;
-   position_[1] = y;
-   position_[2] = z;
+   auto & data =
+      GetUniformData();
+
+   data.layout_.position_[0] = x;
+   data.layout_.position_[1] = y;
+   data.layout_.position_[2] = z;
+
+   data.update_ = true;
 
    return true;
 }
@@ -211,13 +235,44 @@ bool Text::SetPosition(
 const float (&Text::GetPosition( ) const noexcept)[3]
 {
    return
-      position_;
+      GetUniformData().layout_.position_;
+}
+
+bool Text::SetColor(
+   const float r,
+   const float g,
+   const float b ) noexcept
+{
+   auto & data =
+      GetUniformData();
+
+   data.layout_.color_[0] =
+      std::max(0.0f, std::min(1.0f, r));
+   data.layout_.color_[1] =
+      std::max(0.0f, std::min(1.0f, g));
+   data.layout_.color_[2] =
+      std::max(0.0f, std::min(1.0f, b));
+
+   data.update_ = true;
+
+   return true;
+}
+
+const float (&Text::GetColor( ) const noexcept)[3]
+{
+   return
+      GetUniformData().layout_.color_;
 }
 
 bool Text::SetScale(
    const float scale ) noexcept
 {
-   scale_ = scale;
+   auto & data =
+      GetUniformData();
+
+   data.layout_.scale_ = scale;
+
+   data.update_ = true;
 
    return true;
 }
@@ -225,13 +280,13 @@ bool Text::SetScale(
 float Text::GetScale( ) const noexcept
 {
    return
-      scale_;
+      GetUniformData().layout_.scale_;
 }
 
 bool Text::PrependChar(
    const char c ) noexcept
 {
-   update_ = true;
+   regenerate_vertices_ = true;
 
    text_.insert(
       text_.cbegin(),
@@ -259,7 +314,8 @@ bool Text::PrependText(
          0,
          text);
 
-      update_ = prepended = true;
+      regenerate_vertices_ =
+         prepended = true;
    }
 
    return
@@ -269,7 +325,7 @@ bool Text::PrependText(
 bool Text::AppendChar(
    const char c ) noexcept
 {
-   update_ = true;
+   regenerate_vertices_ = true;
 
    text_.append(
       1,
@@ -296,7 +352,8 @@ bool Text::AppendText(
       text_.append(
          text);
 
-      update_ = appended = true;
+      regenerate_vertices_ =
+         appended = true;
    }
 
    return
@@ -313,7 +370,8 @@ bool Text::SetText(
       text_.swap(
          text);
 
-      update_ = set = true;
+      regenerate_vertices_ =
+         set = true;
    }
 
    return set;
@@ -329,7 +387,8 @@ bool Text::SetText(
       text_.assign(
          text);
 
-      update_ = set = true;
+      regenerate_vertices_ =
+         set = true;
    }
 
    return set;
@@ -474,7 +533,7 @@ void Text::RegenerateVertices( ) noexcept
          verts_tex_coords.size());
    }
 
-   update_ = false;
+   regenerate_vertices_ = false;
 }
 
 void Text::RegenerateTexture( ) noexcept
@@ -529,6 +588,7 @@ bool Text::RenderText( ) noexcept
    const bool render =
       gl_data_.second.shader_program_ &&
       gl_data_.second.vertex_array_ &&
+      gl_data_.second.uniform_buffer_ &&
       gl_data_.second.vertex_buffer_ &&
       gl_data_.second.vertex_buffer_->GetSize() &&
       font_texture_ && *font_texture_;
@@ -549,17 +609,10 @@ bool Text::RenderText( ) noexcept
          GL_ONE_MINUS_SRC_ALPHA,
          GL_ONE_MINUS_SRC_ALPHA };
 
-      const gl::PushMatrix push_matrix {
-         GL_MODELVIEW };
-
-      glTranslatef(
-         position_[0],
-         position_[1],
-         position_[2]);
-      glScalef(
-         scale_,
-         scale_,
-         scale_);
+      const gl::BindUniformBuffer bind_ubo {
+         gl_data_.second.uniform_buffer_.get(),
+         gl_data_.second.shader_program_.get(),
+         "TEXT_DATA" };
 
       const gl::BindShaderProgram bind_shader_program {
          gl_data_.second.shader_program_.get() };
@@ -594,8 +647,15 @@ CreateShaderProgram( )
    auto error =
       vertex_shader.SetSource(
          R"(#version 420 compatibility
-            layout (location = 0) in vec3 position;
+            layout (location = 0) in vec3 vertex;
             layout (location = 1) in vec2 tex_coord;
+
+            layout (std140) uniform TEXT_DATA
+            {
+               float scale;
+               vec3 position;
+               vec3 color;
+            } text_data;
 
             out VS_OUT
             {
@@ -610,7 +670,9 @@ CreateShaderProgram( )
                // to be able to pull in compatibility features.
                gl_Position =
                   gl_ModelViewProjectionMatrix *
-                  vec4(position, 1.0f);
+                  vec4(text_data.position.xyz +
+                       vertex.xyz * text_data.scale,
+                       1.0f);
 
                fragment_shader_in.tex_coord =
                   tex_coord;
@@ -636,6 +698,13 @@ CreateShaderProgram( )
 
             layout (location = 0) out vec4 frag_color;
 
+            layout (std140) uniform TEXT_DATA
+            {
+               float scale;
+               vec3 position;
+               vec3 color;
+            } text_data;
+
             in VS_OUT
             {
                smooth vec2 tex_coord;
@@ -652,7 +721,7 @@ CreateShaderProgram( )
                   discard;
 
                frag_color =
-                  vec4(1.0f, 1.0f, 1.0f, tex_value);
+                  vec4(text_data.color, tex_value);
             }
          )");
 
@@ -796,12 +865,24 @@ Text::GLData Text::InitializeGLData( ) noexcept
          CreateVertexArray(
             *vertex_buffer);
 
+      auto uniform_buffer =
+         std::make_unique< gl::UniformBuffer >(
+            GL_STREAM_DRAW_ARB);
+
       data.shader_program_.swap(
          shader_program);
       data.vertex_buffer_.swap(
          vertex_buffer);
       data.vertex_array_.swap(
          vertex_array);
+      data.uniform_buffer_.swap(
+         uniform_buffer);
+
+      std::copy(
+         gl_data_.second.gl_uniform_data_,
+         gl_data_.second.gl_uniform_data_ +
+         std::size(gl_data_.second.gl_uniform_data_),
+         data.gl_uniform_data_);
    }
    catch (const std::exception & e)
    {
@@ -812,6 +893,38 @@ Text::GLData Text::InitializeGLData( ) noexcept
    VALIDATE_NO_GL_ERROR();
 
    return data;
+}
+
+TextUniformData & Text::GetUniformData( ) noexcept
+{
+   return
+      reinterpret_cast< TextUniformData & >(
+         gl_data_.second.gl_uniform_data_);
+}
+
+const TextUniformData & Text::GetUniformData( ) const noexcept
+{
+   return
+      const_cast< Text * >(this)->GetUniformData();
+}
+
+void Text::UpdateUniformData( ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   if (gl_data_.second.uniform_buffer_)
+   {
+      auto & uniform_data =
+         GetUniformData();
+
+      gl_data_.second.uniform_buffer_->SetData(
+         &uniform_data.layout_,
+         sizeof(TextUniformData::Layout));
+
+      uniform_data.update_ = false;
+   }
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 } // namespace opengl

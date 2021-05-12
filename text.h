@@ -13,11 +13,13 @@ namespace opengl
 namespace gl
 {
 class ShaderProgram;
+class UniformBuffer;
 class VertexBuffer;
 class VertexArray;
 } // namespace gl
 
 class FontEngine;
+struct TextUniformData;
 
 enum class FontEngineType : size_t;
 
@@ -58,6 +60,12 @@ public:
       const float z ) noexcept;
    const float (&GetPosition( ) const noexcept)[3];
 
+   bool SetColor(
+      const float r,
+      const float g,
+      const float b ) noexcept;
+   const float (&GetColor( ) const noexcept)[3];
+
    bool SetScale(
       const float scale ) noexcept;
    float GetScale( ) const noexcept;
@@ -84,12 +92,21 @@ public:
 private:
    struct GLData
    {
+      GLData( ) noexcept;
+      ~GLData( ) noexcept;
+      GLData( GLData && ) noexcept;
+      GLData & operator = ( GLData && ) noexcept;
+
       std::unique_ptr< gl::ShaderProgram >
          shader_program_;
       std::unique_ptr< gl::VertexBuffer >
          vertex_buffer_;
       std::unique_ptr< gl::VertexArray >
          vertex_array_;
+      std::unique_ptr< gl::UniformBuffer >
+         uniform_buffer_;
+
+      uint8_t gl_uniform_data_[52] { };
    };
 
    void RegenerateVertices( ) noexcept;
@@ -97,6 +114,11 @@ private:
    bool RenderText( ) noexcept;
 
    GLData InitializeGLData( ) noexcept;
+
+   TextUniformData & GetUniformData( ) noexcept;
+   const TextUniformData & GetUniformData( ) const noexcept;
+
+   void UpdateUniformData( ) noexcept;
 
    std::shared_ptr< FontEngine >
       font_engine_;
@@ -106,13 +128,10 @@ private:
    std::shared_ptr< uint32_t >
       font_texture_;
 
-   bool update_;
+   bool regenerate_vertices_;
    bool release_texture_;
 
    std::string text_;
-
-   float scale_;
-   float position_[3];
 
    std::pair< bool, GLData >
       gl_data_;
