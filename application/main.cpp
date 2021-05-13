@@ -17,8 +17,8 @@
 // #include <ft2build.h>
 // #include <freetype/freetype.h>
 
-#include "text.h"
-#include "error_reporting.h"
+#include "opengl-text/text.h"
+#include "opengl-text/error_reporting.h"
 
 float scale { 1.0f };
 uint32_t size { 48 };
