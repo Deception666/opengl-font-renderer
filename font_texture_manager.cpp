@@ -80,7 +80,9 @@ void AllocateTextureStorage(
    {
       const int32_t max_levels =
          glGenerateMipmap ?
-         1 + std::floor(std::log2(std::max(width, height))) :
+         1 +
+         static_cast< int32_t >(
+            std::floor(std::log2(std::max(width, height)))) :
          1;
 
       glTexStorage2D(

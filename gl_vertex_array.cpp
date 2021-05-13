@@ -86,7 +86,7 @@ void VertexArray::BindVertexAttribute(
    const GLint component_count,
    const GLenum component_type,
    const GLboolean normalize_data,
-   const std::ptrdiff_t relative_offset ) noexcept
+   const GLuint relative_offset ) noexcept
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 

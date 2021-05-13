@@ -14,8 +14,8 @@
 #include <QtGui/QKeyEvent>
 #include <QtGui/QImageWriter>
 
-//#include <ft2build.h>
-//#include <freetype/freetype.h>
+// #include <ft2build.h>
+// #include <freetype/freetype.h>
 
 #include "text.h"
 #include "error_reporting.h"
@@ -182,6 +182,9 @@ void OpenGLWidget::resizeGL(
    const int32_t width,
    const int32_t height )
 {
+   std::ignore = width;
+   std::ignore = height;
+
    assert(glGetError() == GL_NO_ERROR);
 }
 
@@ -247,7 +250,6 @@ void OpenGLWidget::resizeGL(
 
 void OpenGLWidget::paintGL( )
 {
-
    glClear(
       GL_COLOR_BUFFER_BIT |
       GL_DEPTH_BUFFER_BIT);

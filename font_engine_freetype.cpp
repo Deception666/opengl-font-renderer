@@ -232,16 +232,16 @@ FontEngineFreeType::GenerateTextureCoords(
 
       tex_coords.normalized.left =
          tex_coords.absolute.left /
-         static_cast< double >(TEXTURE_WIDTH - 1);
+         static_cast< float >(TEXTURE_WIDTH - 1);
       tex_coords.normalized.right =
          tex_coords.absolute.right /
-         static_cast< double >(TEXTURE_WIDTH - 1);
+         static_cast< float >(TEXTURE_WIDTH - 1);
       tex_coords.normalized.top =
          tex_coords.absolute.top /
-         static_cast< double >(TEXTURE_HEIGHT - 1);
+         static_cast< float >(TEXTURE_HEIGHT - 1);
       tex_coords.normalized.bottom =
          tex_coords.absolute.bottom /
-         static_cast< double >(TEXTURE_HEIGHT - 1);
+         static_cast< float >(TEXTURE_HEIGHT - 1);
 
       tex_coords.valid = true;
 

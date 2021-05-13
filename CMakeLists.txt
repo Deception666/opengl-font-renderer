@@ -12,6 +12,7 @@ if (WIN32)
    add_compile_options(
       /MP
       /permissive-
+      /W4
       /DNOMINMAX
       /DWIN32_LEAN_AND_MEAN)
 endif ( )

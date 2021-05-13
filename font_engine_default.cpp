@@ -7,6 +7,7 @@
 #endif
 
 #include <string>
+#include <tuple>
 
 namespace opengl
 {
@@ -27,6 +28,8 @@ bool FontEngineDefault::Initialize( ) noexcept
 bool FontEngineDefault::SetFont(
    const std::string & font_filename ) noexcept
 {
+   std::ignore = font_filename;
+
     return false;
 }
 
@@ -34,6 +37,9 @@ bool FontEngineDefault::SetFont(
    const std::string & font_filename,
    const uint32_t size ) noexcept
 {
+   std::ignore = font_filename;
+   std::ignore = size;
+
     return false;
 }
 
@@ -46,6 +52,8 @@ std::string FontEngineDefault::GetFont( ) const noexcept
 bool FontEngineDefault::SetSize(
    const uint32_t size ) noexcept
 {
+   std::ignore = size;
+
     return false;
 }
 

@@ -512,7 +512,9 @@ void Text::RegenerateVertices( ) noexcept
                      verts_tex_coords);
                }
 
-               pen_x += glyph->advance;
+               pen_x +=
+                  static_cast< float >(
+                     glyph->advance);
             }
          }
       }
@@ -621,7 +623,8 @@ bool Text::RenderText( ) noexcept
          gl_data_.second.vertex_array_.get() };
 
       const auto vertex_count =
-         gl_data_.second.vertex_buffer_->GetSize< float >() / 5;
+         static_cast< GLsizei >(
+            gl_data_.second.vertex_buffer_->GetSize< float >() / 5);
 
       glDrawArrays(
          GL_TRIANGLES,

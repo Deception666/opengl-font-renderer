@@ -242,14 +242,14 @@ const FreeType::Glyph * FreeType::GetGlyph(
 
    if (face_)
    {
-      decltype(glyphs_)::const_iterator glyph =
+      decltype(glyphs_)::const_iterator glyph_it =
          glyphs_.find(
             character);
 
-      if (glyph != glyphs_.cend())
+      if (glyph_it != glyphs_.cend())
       {
          glyph_ptr =
-            &glyph->second;
+            &glyph_it->second;
       }
       else
       {
@@ -580,8 +580,7 @@ uint16_t FreeType::GetFaceUnitsPerEM(
 #if _WIN32
 
 #if _M_IX86
-   const size_t FACE_UNITS_PER_EM_OFFSET { 64 };
-   #error "Define for this platform type!"
+   const size_t FACE_UNITS_PER_EM_OFFSET { 68 };
 #elif _M_X64
    const size_t FACE_UNITS_PER_EM_OFFSET { 104 };
 #else
@@ -607,8 +606,7 @@ int16_t FreeType::GetFaceAscender(
 #if _WIN32
 
 #if _M_IX86
-   const size_t FACE_ASCENDER_OFFSET { 64 };
-   #error "Define for this platform type!"
+   const size_t FACE_ASCENDER_OFFSET { 70 };
 #elif _M_X64
    const size_t FACE_ASCENDER_OFFSET { 106 };
 #else
@@ -634,8 +632,7 @@ int16_t FreeType::GetFaceDescender(
 #if _WIN32
 
 #if _M_IX86
-   const size_t FACE_DESCENDER_OFFSET { 64 };
-   #error "Define for this platform type!"
+   const size_t FACE_DESCENDER_OFFSET { 72 };
 #elif _M_X64
    const size_t FACE_DESCENDER_OFFSET { 108 };
 #else

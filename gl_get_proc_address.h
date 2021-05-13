@@ -24,7 +24,6 @@ T GetProcAddress(
 #error "Define for this platform!"
 #endif
 
-   VALIDATE_NO_GL_ERROR();
 }
 
 }} // namespace opengl::gl
