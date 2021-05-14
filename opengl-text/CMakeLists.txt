@@ -2,6 +2,10 @@ cmake_minimum_required(
    VERSION 3.19.4)
 
 set(
+   proj_name
+   opengl-text)
+
+set(
    source
    src/calling_convention.h
    src/error_reporting_private.cpp
@@ -58,31 +62,108 @@ set(
 set(
    includes
    opengl-text/error_reporting.h
+   opengl-text/library_export.h
    opengl-text/text.h)
 
 add_library(
-   opengl-text
-   STATIC
+   ${proj_name}
    ${source}
    ${includes})
 
 add_library(
-   opengl-text::text
+   opengl::text
    ALIAS
-   opengl-text)
+   ${proj_name})
+
+set(
+   debug_postfix
+   -d)
+
+if (MSVC)
+   target_compile_definitions(
+      ${proj_name}
+      PUBLIC
+      $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,OPENGL_TEXT_DLL,>
+      PRIVATE
+      NOMINMAX
+      WIN32_LEAN_AND_MEAN)
+
+   target_compile_options(
+      ${proj_name}
+      PRIVATE
+      $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,/wd4251,>
+      /Zi)
+
+   target_link_options(
+      ${proj_name}
+      PRIVATE
+      /DEBUG:FULL)
+ 
+   if (NOT BUILD_SHARED_LIBS)
+      set_target_properties(
+         ${proj_name}
+         PROPERTIES
+         COMPILE_PDB_NAME_DEBUG ${proj_name}${debug_postfix}
+         COMPILE_PDB_NAME_RELEASE ${proj_name})
+   endif ( )
+endif ( )
+
+set_target_properties(
+   ${proj_name}
+   PROPERTIES
+   DEBUG_POSTFIX "${debug_postfix}"
+   PUBLIC_HEADER "${includes}"
+   EXPORT_NAME text)
+
+target_include_directories(
+   ${proj_name}
+   PUBLIC
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+   $<INSTALL_INTERFACE:${proj_name}/include>
+   PRIVATE
+   ${CMAKE_CURRENT_SOURCE_DIR}/${proj_name})
 
 find_package(
    OpenGL
    REQUIRED)
 
-target_include_directories(
-   opengl-text
-   PUBLIC
-   .
-   PRIVATE
-   ./opengl-text)
-
 target_link_libraries(
-   opengl-text
+   ${proj_name}
    PRIVATE
    OpenGL::GL)
+
+install(
+   TARGETS ${proj_name}
+   EXPORT ${proj_name}-config
+   RUNTIME
+      DESTINATION ${proj_name}/bin
+   LIBRARY
+      DESTINATION ${proj_name}/lib
+   ARCHIVE
+      DESTINATION ${proj_name}/lib
+   PUBLIC_HEADER
+      DESTINATION ${proj_name}/include/${proj_name})
+
+if (MSVC)
+   if (BUILD_SHARED_LIBS)
+      install(
+         FILES
+         $<TARGET_PDB_FILE:${proj_name}>
+         DESTINATION ${proj_name}/bin)
+   else ( )
+      set(
+         base_pdb_config
+         $<TARGET_PROPERTY:${proj_name},ARCHIVE_OUTPUT_DIRECTORY>/$<CONFIG>)
+
+      install(
+         FILES
+         $<IF:$<CONFIG:DEBUG>,${base_pdb_config}/$<TARGET_PROPERTY:${proj_name},COMPILE_PDB_NAME_DEBUG>.pdb,>
+         $<IF:$<CONFIG:RELEASE>,${base_pdb_config}/$<TARGET_PROPERTY:${proj_name},COMPILE_PDB_NAME_RELEASE>.pdb,>
+         DESTINATION ${proj_name}/lib)
+   endif ( )
+endif ( )
+
+install(
+   EXPORT ${proj_name}-config
+   DESTINATION ${proj_name}/lib/${proj_name}
+   NAMESPACE opengl::)

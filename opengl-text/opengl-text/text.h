@@ -1,6 +1,8 @@
 #ifndef _OPENGL_TEXT_H_
 #define _OPENGL_TEXT_H_
 
+#include "library_export.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -23,7 +25,7 @@ struct TextUniformData;
 
 enum class FontEngineType : size_t;
 
-class Text final
+class OGL_TEXT_EXPORT Text final
 {
 public:
    Text( ) noexcept;
