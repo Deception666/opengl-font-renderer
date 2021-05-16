@@ -7,6 +7,7 @@ set(
 
 set(
    source
+   src/bounding_box.cpp
    src/calling_convention.h
    src/error_reporting_private.cpp
    src/error_reporting_private.h
@@ -61,6 +62,7 @@ set(
 
 set(
    includes
+   opengl-text/bounding_box.h
    opengl-text/error_reporting.h
    opengl-text/library_export.h
    opengl-text/text.h)

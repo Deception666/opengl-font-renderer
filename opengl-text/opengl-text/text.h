@@ -1,6 +1,7 @@
 #ifndef _OPENGL_TEXT_H_
 #define _OPENGL_TEXT_H_
 
+#include "bounding_box.h"
 #include "library_export.h"
 
 #include <cstddef>
@@ -8,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace opengl
 {
@@ -72,6 +74,8 @@ public:
       const float scale ) noexcept;
    float GetScale( ) const noexcept;
 
+   BoundingBox GetBoundingBox( ) noexcept;
+
    bool PrependChar(
       const char c ) noexcept;
    bool PrependText(
@@ -108,6 +112,9 @@ private:
       std::unique_ptr< gl::UniformBuffer >
          uniform_buffer_;
 
+      std::vector< float >
+         vertex_buffer_data_;
+
       uint8_t gl_uniform_data_[52] { };
    };
 
@@ -137,6 +144,8 @@ private:
 
    std::pair< bool, GLData >
       gl_data_;
+
+   BoundingBox bounding_box_;
 
 };
 

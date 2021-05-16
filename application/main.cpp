@@ -280,16 +280,49 @@ void OpenGLWidget::paintGL( )
    std::string s {
       "scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
+      + std::to_string(text->GetBoundingBox().GetWidth()) + "\n"
+      + std::to_string(text->GetBoundingBox().GetHeight()) + "\n"
       + string
    };
+
+   opengl::BoundingBox bb;
 
    if (text)
    {
       text->SetText(std::move(s));
       text->SetScale(scale);
-      text->SetPosition(0.0f, height() - text->GetFontMaxTop() * scale, 0.0f);
+      text->SetPosition(40.0f, height() - text->GetFontMaxTop() * scale - 40, 0.0f);
+
+      bb =
+         text->GetBoundingBox();
+
       text->Render();
    }
+
+   glPushMatrix();
+
+   glBegin(GL_LINE_LOOP);
+
+   glVertex3f(
+      std::get< 0 >(bb.GetUpperLeftFront()),
+      std::get< 1 >(bb.GetUpperLeftFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetUpperLeftFront()),
+      std::get< 1 >(bb.GetLowerRightFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetLowerRightFront()),
+      std::get< 1 >(bb.GetLowerRightFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetLowerRightFront()),
+      std::get< 1 >(bb.GetUpperLeftFront()),
+      0.0f);
+
+   glEnd();
+
+   glPopMatrix();
 
 #else
 

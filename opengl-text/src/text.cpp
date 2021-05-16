@@ -26,10 +26,16 @@
 #include <exception>
 #include <new>
 #include <stdexcept>
-#include <vector>
 
 namespace opengl
 {
+
+static void RegenerateVertices(
+   const std::string & text,
+   const float scale_factor,
+   FontEngine * const font_engine,
+   std::vector< float > & verts_tex_coords,
+   BoundingBox & bounding_box ) noexcept;
 
 Text::GLData::GLData( ) noexcept = default;
 Text::GLData::~GLData( ) noexcept = default;
@@ -270,6 +276,16 @@ bool Text::SetScale(
    auto & data =
       GetUniformData();
 
+   if (scale != data.layout_.scale_)
+   {
+      const float scale_percentage =
+         (scale - data.layout_.scale_) /
+         data.layout_.scale_;
+
+      bounding_box_.Scale(
+         1 + scale_percentage);
+   }
+
    data.layout_.scale_ = scale;
 
    data.update_ = true;
@@ -281,6 +297,30 @@ float Text::GetScale( ) const noexcept
 {
    return
       GetUniformData().layout_.scale_;
+}
+
+BoundingBox Text::GetBoundingBox( ) noexcept
+{
+   // always call either before rendering
+   // or after rendering to make sure the
+   // attributes are as up-to-date.
+
+   if (regenerate_vertices_)
+   {
+      opengl::RegenerateVertices(
+         text_,
+         GetScale(),
+         font_engine_.get(),
+         gl_data_.second.vertex_buffer_data_,
+         bounding_box_);
+   }
+   
+   const auto & position =
+      GetPosition();
+
+   return
+      bounding_box_.Translate(
+         position);
 }
 
 bool Text::PrependChar(
@@ -406,7 +446,7 @@ size_t Text::GetTextSize( ) const noexcept
       text_.size();
 }
 
-static void GenerateVertices(
+static void GenerateVertexData(
    const float x_left,
    const float y_bottom,
    const FontEngine::Metric & glyph_metric,
@@ -461,39 +501,66 @@ static void GenerateVertices(
       glyph_metric.tex_coords.normalized.top);
 }
 
-void Text::RegenerateVertices( ) noexcept
+static void ExpandBoundingBox(
+   BoundingBox & bounding_box,
+   const float current_pen_x,
+   const float current_pen_y,
+   const float scale_factor,
+   const FontEngine::Metric & metric ) noexcept
 {
-   if (font_engine_ &&
-       gl_data_.second.vertex_buffer_)
+   const float next_pen_x =
+      current_pen_x + static_cast< float >(metric.advance);
+   const float right =
+      current_pen_x + metric.left + metric.width;
+   const float left =
+      current_pen_x + metric.left;
+   const float top =
+      current_pen_y + metric.top;
+   const float bottom =
+      top - metric.height;
+
+   bounding_box.Expand({
+      scale_factor * left,
+      scale_factor * top,
+      0.0f });
+   bounding_box.Expand({
+      scale_factor * right,
+      scale_factor * bottom,
+      0.0f });
+}
+
+static void RegenerateVertices(
+   const std::string & text,
+   const float scale_factor,
+   FontEngine * const font_engine,
+   std::vector< float > & verts_tex_coords,
+   BoundingBox & bounding_box ) noexcept
+{
+   verts_tex_coords.clear();
+
+   if (font_engine)
    {
-      if (release_texture_)
-      {
-         font_texture_.reset();
-
-         release_texture_ = false;
-      }
-
-      font_engine_texture_ =
-         font_engine_->GetGlyphTextureMap().texture_map;
-
-      std::vector< float > verts_tex_coords;
+      bounding_box =
+         !text.empty() ?
+         BoundingBox::InitInvalid() :
+         BoundingBox { };
 
       float pen_x { };
       float pen_y { };
 
-      for (const auto c : text_)
+      for (const auto c : text)
       {
          if (c == '\n')
          {
             pen_x = 0.0f;
             pen_y -=
                static_cast< float >(
-                  font_engine_->GetVerticalAdvance());
+                  font_engine->GetVerticalAdvance());
          }
          else
          {
             const auto glyph =
-               font_engine_->GetGlyphMetric(
+               font_engine->GetGlyphMetric(
                   c);
 
             if (glyph)
@@ -505,18 +572,54 @@ void Text::RegenerateVertices( ) noexcept
                   const float y_bottom =
                      pen_y - (static_cast< float >(glyph->height) - glyph->top);
 
-                  GenerateVertices(
+                  GenerateVertexData(
                      x_left,
                      y_bottom,
                      *glyph,
                      verts_tex_coords);
                }
 
+               ExpandBoundingBox(
+                  bounding_box,
+                  pen_x,
+                  pen_y,
+                  scale_factor,
+                  *glyph);
+
                pen_x +=
                   static_cast< float >(
                      glyph->advance);
             }
          }
+      }
+   }
+}
+
+void Text::RegenerateVertices( ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   if (font_engine_ &&
+       gl_data_.second.vertex_buffer_)
+   {
+      if (release_texture_)
+      {
+         font_texture_.reset();
+
+         release_texture_ = false;
+      }
+
+      if (gl_data_.second.vertex_buffer_data_.empty())
+      {
+         font_engine_texture_ =
+            font_engine_->GetGlyphTextureMap().texture_map;
+
+         opengl::RegenerateVertices(
+            text_,
+            GetScale(),
+            font_engine_.get(),
+            gl_data_.second.vertex_buffer_data_,
+            bounding_box_);
       }
 
       if (font_engine_texture_.expired() ||
@@ -526,16 +629,20 @@ void Text::RegenerateVertices( ) noexcept
       }
 
       const auto data =
-         !verts_tex_coords.empty() ?
-         verts_tex_coords.data() :
+         !gl_data_.second.vertex_buffer_data_.empty() ?
+         gl_data_.second.vertex_buffer_data_.data() :
          nullptr;
 
       gl_data_.second.vertex_buffer_->SetData(
          data,
-         verts_tex_coords.size());
+         gl_data_.second.vertex_buffer_data_.size());
+
+      gl_data_.second.vertex_buffer_data_.clear();
    }
 
    regenerate_vertices_ = false;
+
+   VALIDATE_NO_GL_ERROR();
 }
 
 void Text::RegenerateTexture( ) noexcept
@@ -638,7 +745,7 @@ bool Text::RenderText( ) noexcept
       render;
 }
 
-std::unique_ptr< gl::ShaderProgram >
+static std::unique_ptr< gl::ShaderProgram >
 CreateShaderProgram( )
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
@@ -761,7 +868,7 @@ CreateShaderProgram( )
       shader_program;
 }
 
-std::unique_ptr< gl::VertexArray >
+static std::unique_ptr< gl::VertexArray >
 CreateVertexArray(
    const gl::VertexBuffer & vertex_buffer )
 {
@@ -801,7 +908,7 @@ CreateVertexArray(
       vertex_array;
 }
 
-void ValidateOpenGL( )
+static void ValidateOpenGL( )
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
