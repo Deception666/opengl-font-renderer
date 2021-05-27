@@ -16,8 +16,10 @@ struct TextUniformData
       uint32_t padding_1[3] { };
       float position_[3] { };
       uint32_t padding_2 { };
-      float color_[3] { 1.0f, 1.0f, 1.0f };
+      float offset_[3] { };
       uint32_t padding_3 { };
+      float color_[3] { 1.0f, 1.0f, 1.0f };
+      uint32_t padding_4 { };
    } layout_;
 };
 

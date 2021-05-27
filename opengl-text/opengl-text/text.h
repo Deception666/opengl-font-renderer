@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -30,6 +31,20 @@ enum class FontEngineType : size_t;
 class OGL_TEXT_EXPORT Text final
 {
 public:
+   enum Align : uint8_t
+   {
+      LEFT    = 0b00000001,
+      HCENTER = 0b00000010,
+      RIGHT   = 0b00000100,
+
+      TOP     = 0b00010000,
+      VCENTER = 0b00100000,
+      BOTTOM  = 0b01000000,
+   };
+
+   using AlignFlags =
+      std::underlying_type< Align >::type;
+
    Text( ) noexcept;
    Text(
       const std::string & font_filename ) noexcept;
@@ -74,6 +89,10 @@ public:
       const float scale ) noexcept;
    float GetScale( ) const noexcept;
 
+   bool SetAlignment(
+      const AlignFlags flags ) noexcept;
+   AlignFlags GetAlignment( ) const noexcept;
+
    BoundingBox GetBoundingBox( ) noexcept;
 
    bool PrependChar(
@@ -115,7 +134,7 @@ private:
       std::vector< float >
          vertex_buffer_data_;
 
-      uint8_t gl_uniform_data_[52] { };
+      uint8_t gl_uniform_data_[68] { };
    };
 
    void RegenerateVertices( ) noexcept;
@@ -128,6 +147,7 @@ private:
    const TextUniformData & GetUniformData( ) const noexcept;
 
    void UpdateUniformData( ) noexcept;
+   void UpdateOffset( ) noexcept;
 
    std::shared_ptr< FontEngine >
       font_engine_;
@@ -141,6 +161,7 @@ private:
    bool release_texture_;
 
    std::string text_;
+   AlignFlags align_flags_;
 
    std::pair< bool, GLData >
       gl_data_;

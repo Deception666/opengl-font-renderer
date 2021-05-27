@@ -27,6 +27,8 @@ size_t font_index { 0 };
 static std::string string;
 
 std::unique_ptr< opengl::Text > text;
+std::unique_ptr< opengl::Text > text2;
+std::unique_ptr< opengl::Text > text3;
 
 void font_test( )
 {
@@ -62,12 +64,28 @@ void font_test( )
          std::make_unique< opengl::Text >(
             fonts[index],
             size);
+      text2 =
+         std::make_unique< opengl::Text >(
+            fonts[index],
+            size);
+      text3 =
+         std::make_unique< opengl::Text >(
+            fonts[index],
+            size);
 
       text->SetColor(1.0f, 1.0f, 1.0f);
+      text2->SetColor(1.0f, 0.0f, 0.0f);
+      text3->SetColor(0.0f, 1.0f, 0.0f);
    }
    else
    {
       text->SetFont(
+         fonts[index],
+         size);
+      text2->SetFont(
+         fonts[index],
+         size);
+      text3->SetFont(
          fonts[index],
          size);
    }
@@ -83,6 +101,8 @@ public:
       makeCurrent();
 
       text.reset();
+      text2.reset();
+      text3.reset();
 
       doneCurrent();
    }
@@ -285,44 +305,26 @@ void OpenGLWidget::paintGL( )
       + string
    };
 
-   opengl::BoundingBox bb;
-
    if (text)
    {
       text->SetText(std::move(s));
       text->SetScale(scale);
-      text->SetPosition(40.0f, height() - text->GetFontMaxTop() * scale - 40, 0.0f);
-
-      bb =
-         text->GetBoundingBox();
-
+      text->SetPosition(
+         /*std::abs(std::get< 0 >(text->GetBoundingBox().GetUpperLeftFront())) -
+         text->GetPosition()[0]*/
+         0.0f,
+         height() /*- text->GetFontMaxTop() * scale*/,
+         0.0f);
+      //text->SetAlignment(
+      //   opengl::Text::Align::VCENTER |
+      //   opengl::Text::Align::HCENTER);
       text->Render();
    }
 
-   glPushMatrix();
-
-   glBegin(GL_LINE_LOOP);
-
-   glVertex3f(
-      std::get< 0 >(bb.GetUpperLeftFront()),
-      std::get< 1 >(bb.GetUpperLeftFront()),
-      0.0f);
-   glVertex3f(
-      std::get< 0 >(bb.GetUpperLeftFront()),
-      std::get< 1 >(bb.GetLowerRightFront()),
-      0.0f);
-   glVertex3f(
-      std::get< 0 >(bb.GetLowerRightFront()),
-      std::get< 1 >(bb.GetLowerRightFront()),
-      0.0f);
-   glVertex3f(
-      std::get< 0 >(bb.GetLowerRightFront()),
-      std::get< 1 >(bb.GetUpperLeftFront()),
-      0.0f);
-
+   glPointSize(6);
+   glBegin(GL_POINTS);
+   glVertex3fv(text->GetPosition());
    glEnd();
-
-   glPopMatrix();
 
 #else
 
@@ -448,9 +450,7 @@ void OpenGLWidget::paintGL( )
    glColor3f(1, 1, 1);
 
    auto stext =
-      std::to_string(position[0]) +
-      "\n" +
-      std::to_string(position[1]);
+      std::to_string(position[0]);
 
 //   RenderText(
 //      text.c_str(),
@@ -462,11 +462,42 @@ void OpenGLWidget::paintGL( )
 
    text->SetText(std::move(stext));
    text->SetPosition(
-      position[0],
-      position[1] + 12,
+      position[0] + 12,
+      position[1],
       0.0f);
    text->SetScale(scale);
+   text->SetAlignment(
+      opengl::Text::Align::LEFT |
+      opengl::Text::Align::VCENTER);
    text->Render();
+
+   stext =
+      std::to_string(position[1]);
+
+   text2->SetText(std::move(stext));
+   text2->SetPosition(
+      position[0] - 12,
+      position[1],
+      0.0f);
+   text2->SetScale(scale);
+   text2->SetAlignment(
+      opengl::Text::Align::RIGHT |
+      opengl::Text::Align::VCENTER);
+   text2->Render();
+
+   stext =
+      std::to_string(velocity[1]);
+
+   text3->SetText(std::move(stext));
+   text3->SetPosition(
+      position[0],
+      position[1] + 15,
+      0.0f);
+   text3->SetScale(scale);
+   text3->SetAlignment(
+      opengl::Text::Align::BOTTOM |
+      opengl::Text::Align::HCENTER);
+   text3->Render();
 
    auto now = std::chrono::steady_clock::now();
    auto delta = now - time;
@@ -505,6 +536,38 @@ void OpenGLWidget::paintGL( )
    update();
 
 #endif // RENDER_AS_WORD_PROCESSOR
+
+   const auto bb =
+      text->GetBoundingBox();
+
+   const auto delta_h =
+      std::get< 1 >(bb.GetUpperLeftFront()) -
+      text->GetPosition()[1];
+
+   glPushMatrix();
+
+   glBegin(GL_LINE_LOOP);
+
+   glVertex3f(
+      std::get< 0 >(bb.GetUpperLeftFront()),
+      std::get< 1 >(bb.GetUpperLeftFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetUpperLeftFront()),
+      std::get< 1 >(bb.GetLowerRightFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetLowerRightFront()),
+      std::get< 1 >(bb.GetLowerRightFront()),
+      0.0f);
+   glVertex3f(
+      std::get< 0 >(bb.GetLowerRightFront()),
+      std::get< 1 >(bb.GetUpperLeftFront()),
+      0.0f);
+
+   glEnd();
+
+   glPopMatrix();
 }
 
 int32_t main(

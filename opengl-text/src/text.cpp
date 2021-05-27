@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <exception>
 #include <new>
 #include <stdexcept>
@@ -36,6 +37,11 @@ static void RegenerateVertices(
    FontEngine * const font_engine,
    std::vector< float > & verts_tex_coords,
    BoundingBox & bounding_box ) noexcept;
+
+std::pair< float, float >
+CalculateOffset(
+   const Text::AlignFlags align_flags,
+   const BoundingBox & bounding_box ) noexcept;
 
 Text::GLData::GLData( ) noexcept = default;
 Text::GLData::~GLData( ) noexcept = default;
@@ -75,6 +81,7 @@ font_engine_ {
       font_engine_type) },
 regenerate_vertices_ { true },
 release_texture_ { false },
+align_flags_ { Align::TOP | Align::LEFT },
 gl_data_ { false, GLData { } }
 {
    static_assert(
@@ -299,6 +306,23 @@ float Text::GetScale( ) const noexcept
       GetUniformData().layout_.scale_;
 }
 
+bool Text::SetAlignment(
+   const AlignFlags flags ) noexcept
+{
+   assert(((flags & 0x07) & ((flags & 0x07) - 1)) == 0);
+   assert(((flags & 0x70) & ((flags & 0x70) - 1)) == 0);
+
+   align_flags_ = flags;
+
+   return true;
+}
+
+Text::AlignFlags Text::GetAlignment( ) const noexcept
+{
+   return
+      align_flags_;
+}
+
 BoundingBox Text::GetBoundingBox( ) noexcept
 {
    // always call either before rendering
@@ -314,13 +338,20 @@ BoundingBox Text::GetBoundingBox( ) noexcept
          gl_data_.second.vertex_buffer_data_,
          bounding_box_);
    }
+
+   const auto offset =
+      CalculateOffset(
+         align_flags_,
+         bounding_box_);
    
    const auto & position =
       GetPosition();
 
    return
-      bounding_box_.Translate(
-         position);
+      bounding_box_.Translate({
+         position[0] + offset.first,
+         position[1] + offset.second,
+         position[2] });
 }
 
 bool Text::PrependChar(
@@ -704,6 +735,8 @@ bool Text::RenderText( ) noexcept
 
    if (render)
    {
+      UpdateOffset();
+
       const gl::BindTexutre bind_texture {
          GL_TEXTURE_2D,
          *font_texture_,
@@ -764,6 +797,7 @@ CreateShaderProgram( )
             {
                float scale;
                vec3 position;
+               vec3 offset;
                vec3 color;
             } text_data;
 
@@ -780,7 +814,7 @@ CreateShaderProgram( )
                // to be able to pull in compatibility features.
                gl_Position =
                   gl_ModelViewProjectionMatrix *
-                  vec4(text_data.position.xyz +
+                  vec4((text_data.position.xyz + text_data.offset) +
                        vertex.xyz * text_data.scale,
                        1.0f);
 
@@ -812,6 +846,7 @@ CreateShaderProgram( )
             {
                float scale;
                vec3 position;
+               vec3 offset;
                vec3 color;
             } text_data;
 
@@ -1032,6 +1067,85 @@ void Text::UpdateUniformData( ) noexcept
          sizeof(TextUniformData::Layout));
 
       uniform_data.update_ = false;
+   }
+
+   VALIDATE_NO_GL_ERROR();
+}
+
+std::pair< float, float >
+CalculateOffset(
+   const Text::AlignFlags align_flags,
+   const BoundingBox & bounding_box ) noexcept
+{
+   float x_offset { };
+
+   switch (align_flags & 0x07)
+   {
+   case Text::Align::HCENTER:
+      x_offset = -bounding_box.GetWidth() / 2.0f;
+      break;
+
+   case Text::Align::RIGHT:
+      x_offset = -bounding_box.GetWidth();
+      break;
+
+   case Text::Align::LEFT:
+   default:
+      x_offset = 0.0f;
+      break;
+   }
+
+   float y_offset { };
+
+   switch (align_flags & 0x70)
+   {
+   case Text::Align::VCENTER:
+      y_offset =
+         bounding_box.GetHeight() / 2.0f -
+         std::get< 1 >(bounding_box.GetUpperLeftFront());
+      break;
+
+   case Text::Align::BOTTOM:
+      y_offset =
+         bounding_box.GetHeight() -
+         std::get< 1 >(bounding_box.GetUpperLeftFront());
+      break;
+
+   case Text::Align::TOP:
+   default:
+      y_offset =
+         -std::get< 1 >(bounding_box.GetUpperLeftFront());
+      break;
+   }
+
+   return {
+      x_offset,
+      y_offset
+   };
+}
+
+void Text::UpdateOffset( ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   const auto offset =
+      CalculateOffset(
+         align_flags_,
+         bounding_box_);
+
+   auto & uniform_data =
+      GetUniformData();
+
+   if (offset.first != uniform_data.layout_.offset_[0] ||
+       offset.second != uniform_data.layout_.offset_[1])
+   {
+      uniform_data.layout_.offset_[0] = offset.first;
+      uniform_data.layout_.offset_[1] = offset.second;
+
+      gl_data_.second.uniform_buffer_->SetData(
+         &uniform_data.layout_.offset_,
+         offsetof(TextUniformData::Layout, offset_),
+         sizeof(TextUniformData::Layout::offset_));
    }
 
    VALIDATE_NO_GL_ERROR();

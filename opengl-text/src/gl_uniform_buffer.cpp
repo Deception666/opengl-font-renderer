@@ -114,6 +114,32 @@ bool UniformBuffer::SetData(
    return set;
 }
 
+bool UniformBuffer::SetData(
+   const void * const data,
+   const size_t data_offset,
+   const size_t data_size ) noexcept
+{
+   VALIDATE_ACTIVE_GL_CONTEXT();
+
+   bool set { false };
+
+   if (data &&
+       data_offset + data_size < max_size_)
+   {
+      glNamedBufferSubData(
+         uniform_buffer_,
+         data_offset,
+         data_size,
+         data);
+
+      set = true;
+   }
+
+   VALIDATE_NO_GL_ERROR();
+
+   return set;
+}
+
 size_t UniformBuffer::GetSize( ) const noexcept
 {
    return

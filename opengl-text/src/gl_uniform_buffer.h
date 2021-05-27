@@ -32,6 +32,10 @@ public:
    bool SetData(
       const void * const data,
       const size_t data_size ) noexcept;
+   bool SetData(
+      const void * const data,
+      const size_t data_offset,
+      const size_t data_size ) noexcept;
 
    size_t GetSize( ) const noexcept;
 
