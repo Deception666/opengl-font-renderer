@@ -11,6 +11,10 @@
 #define "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#define CALL_CONV
+
 #else
 #error "Define for this platform!"
 #endif // _WIN32

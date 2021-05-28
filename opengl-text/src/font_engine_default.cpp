@@ -2,6 +2,8 @@
 
 #if _WIN32
 #include "font_engine_default_data_windows.h"
+#elif __linux__
+#include "font_engine_default_data_linux.h"
 #else
 #error "Define for this platform type!"
 #endif

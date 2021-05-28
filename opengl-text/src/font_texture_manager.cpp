@@ -2,6 +2,7 @@
 #include "calling_convention.h"
 #include "gl_defines.h"
 #include "gl_includes.h"
+#include "gl_get_proc_address.h"
 #include "gl_validate.h"
 #include "reverse_lock.h"
 
@@ -49,12 +50,22 @@ void AllocateTextureStorage(
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-#if _WIN32
+#if _WIN32 || __linux__
+
+   using glTexStorage2DFuncPtr =
+      void (CALL_CONV *) ( GLenum, GLsizei, GLenum, GLsizei, GLsizei );
+   using glGenerateMipmapFuncPtr =
+      void (CALL_CONV *) ( GLenum );
+
    const auto glTexStorage2D =
-      reinterpret_cast< void (CALL_CONV *) ( GLenum, GLsizei, GLenum, GLsizei, GLsizei ) >(
-         wglGetProcAddress("glTexStorage2D"));
+      gl::GetProcAddress(
+         "glTexStorage2D",
+         glTexStorage2DFuncPtr { });
    const auto glGenerateMipmap =
-      wglGetProcAddress("glGenerateMipmap");
+      gl::GetProcAddress(
+         "glGenerateMipmap",
+         glGenerateMipmapFuncPtr { });
+
 #else
 #error "Define for this platform!"
 #endif
@@ -226,10 +237,16 @@ void UpdateTexture(
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-#if _WIN32
+#if _WIN32 || __linux__
+
+   using glGenerateMipmapFuncPtr =
+      void (CALL_CONV *) ( GLenum );
+
    const auto glGenerateMipmap =
-      reinterpret_cast< void (CALL_CONV *) ( GLenum ) >(
-         wglGetProcAddress("glGenerateMipmap"));
+      gl::GetProcAddress(
+         "glGenerateMipmap",
+         glGenerateMipmapFuncPtr { });
+
 #else
 #error "Define for this platform!"
 #endif

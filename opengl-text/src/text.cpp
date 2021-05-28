@@ -51,6 +51,8 @@ Text::GLData & Text::GLData::operator = ( GLData && ) noexcept = default;
 Text::Text( ) noexcept :
 #if _WIN32
 Text { "calibri.ttf" }
+#elif __linux__
+Text { "DejaVuSans.ttf" }
 #else
 #error "Define for this platform!"
 #endif

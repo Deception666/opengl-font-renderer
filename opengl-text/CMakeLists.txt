@@ -14,7 +14,6 @@ set(
    src/font_engine.h
    src/font_engine_default.cpp
    src/font_engine_default.h
-   src/font_engine_default_data_windows.h
    src/font_engine_factory.cpp
    src/font_engine_factory.h
    src/font_engine_freetype.cpp
@@ -59,6 +58,16 @@ set(
    src/reverse_lock.h
    src/text.cpp
    src/text_uniform_data.h)
+
+if (MSVC)
+   set(
+      ${source}
+      src/font_engine_default_data_windows.h)
+elseif (UNIX)
+   set(
+      ${source}
+      src/font_engine_default_data_linux.h)
+endif ( )
 
 set(
    includes
@@ -132,7 +141,8 @@ find_package(
 target_link_libraries(
    ${proj_name}
    PRIVATE
-   OpenGL::GL)
+   OpenGL::GL
+   $<IF:$<CXX_COMPILER_ID:GNU>,${CMAKE_DL_LIBS},>)
 
 install(
    TARGETS ${proj_name}

@@ -12,7 +12,7 @@ namespace opengl
 class FontEngine
 {
 public:
-   virtual ~FontEngine( ) noexcept = 0 { }
+   virtual ~FontEngine( ) noexcept = 0;
 
    virtual bool Initialize( ) noexcept = 0;
 
@@ -76,6 +76,8 @@ public:
    virtual TextureMap GetGlyphTextureMap( ) noexcept = 0;
 
 };
+
+inline FontEngine::~FontEngine( ) noexcept = default;
 
 } // namespace opengl
 

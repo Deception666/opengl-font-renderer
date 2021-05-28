@@ -178,7 +178,7 @@ FontEngineFreeType::GetGlyphTextureMap( ) noexcept
          texture_map.height = texture_data_.texture_map_size.second;
 
          texture_map.texture_map =
-            decltype(TextureData::texture_map)::weak_type {
+            decltype(texture_map.texture_map) {
                texture_data_.texture_map };
       }
       else

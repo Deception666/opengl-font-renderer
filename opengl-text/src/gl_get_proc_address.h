@@ -20,6 +20,14 @@ T GetProcAddress(
       reinterpret_cast< T >(
          wglGetProcAddress(function));
 
+#elif __linux__
+
+   return
+      reinterpret_cast< T >(
+         glXGetProcAddressARB(
+            reinterpret_cast< const GLubyte * >(
+               function)));
+
 #else
 #error "Define for this platform!"
 #endif

@@ -26,7 +26,7 @@ glActiveTextureFuncPtr GetGLActiveTexture( ) noexcept
       get_glActiveTexture,
       [ ] ( )
       {
-#if _WIN32
+#if _WIN32 || __linux__
          glActiveTexture =
             GetProcAddress(
                "glActiveTexture",

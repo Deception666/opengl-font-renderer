@@ -60,7 +60,7 @@ glBlendFuncSeparateFuncPtr GetGLBlendFuncSeparate( ) noexcept
       get_glBlendFuncSeparate,
       [ ] ( )
       {
-#if _WIN32
+#if _WIN32 || __linux__
          glBlendFuncSeparate =
             GetProcAddress(
                "glBlendFuncSeparate",

@@ -15,7 +15,7 @@ bool ExtensionIsSupported(
 
    bool supported { false };
 
-#ifdef _WIN32
+#if _WIN32 || __linux__
    const auto glGetStringi =
       GetProcAddress(
          "glGetStringi",

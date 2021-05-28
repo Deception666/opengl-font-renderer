@@ -2,12 +2,13 @@
 #include "error_reporting_private.h"
 
 #include <algorithm>
-#include <exception>
 #include <stdexcept>
 #include <utility>
 
 #if _WIN32
 #include <windows.h>
+#elif __linux__
+#include <dlfcn.h>
 #endif
 
 namespace opengl
@@ -24,6 +25,12 @@ inline T GetFuncAddress(
       reinterpret_cast< T >(
          GetProcAddress(
             reinterpret_cast< const HMODULE >(module),
+            function));
+#elif __linux__
+   return
+      reinterpret_cast< T >(
+         dlsym(
+            module,
             function));
 #else
 #error "Define for this platform!"
@@ -45,6 +52,20 @@ T GetBitmapData(
 #else
 #define "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t glyph_offset { 84 };
+   const size_t bitmap_offset { 76 };
+#elif __x86_64__
+   const size_t glyph_offset { 120 };
+   const size_t bitmap_offset { 104 };
+#else
+#define "Define for this platform type!"
+#endif // __i386__ 
 
 #else
 #error "Define for this platform type!"
@@ -74,6 +95,18 @@ T GetGlyphData(
 #else
 #error "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t glyph_offset { 84 };
+#elif __x86_64__
+   const size_t glyph_offset { 120 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
 
 #else
 #error "Define for this platform type!"
@@ -146,6 +179,10 @@ FreeType::Create( ) noexcept
       }
    }
 
+#elif __linux__
+
+#pragma message "TBD"
+
 #else
 
 #error "Define for this platform!"
@@ -156,6 +193,20 @@ FreeType::Create( ) noexcept
       instance;
 }
 
+#if __linux__
+
+std::string ConstructFontPath(
+   const std::string & font_filename ) noexcept
+{
+   std::string font_abs_path;
+
+   #pragma message "TBD"
+
+   return font_abs_path;
+}
+
+#endif // __linux__
+
 bool FreeType::SetFont(
    const std::string & font_filename ) noexcept
 {
@@ -165,6 +216,10 @@ bool FreeType::SetFont(
    const std::string font_abs_path =
       "c:/windows/fonts/" +
       font_filename;
+#elif __linux__
+   const std::string font_abs_path =
+      ConstructFontPath(
+         font_filename);
 #else
 #error "Define for this platform!"
 #endif // _WIN32
@@ -350,7 +405,7 @@ face_ { nullptr, delete_face_ }
        !set_pixel_sizes_ || !load_char_)
    {
       throw
-         std::exception {
+         std::runtime_error {
             "Required FreeType functions not found!"
          };
    }
@@ -360,7 +415,7 @@ face_ { nullptr, delete_face_ }
    if (init_(&instance) != 0)
    {
       throw
-         std::exception {
+         std::runtime_error {
             "Unable to initialize a FT instnace!"
          };
    }
@@ -431,6 +486,18 @@ uint32_t FreeType::GetBitmapWidth(
    #error "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t BITMAP_WIDTH_OFFSET { 4 };
+#elif __x86_64__
+   const size_t BITMAP_WIDTH_OFFSET { 4 };
+#else
+   #error "Define for this platform type!"
+#endif // __i386__
+
 #else
 #error "Define for this platform type!"
 #endif // _WIN32
@@ -456,6 +523,18 @@ uint32_t FreeType::GetBitmapHeight(
 #else
 #error "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t BITMAP_HEIGHT_OFFSET { 0 };
+#elif __x86_64__
+   const size_t BITMAP_HEIGHT_OFFSET { 0 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
 
 #else
 #error "Define for this platform type!"
@@ -483,6 +562,18 @@ const uint8_t * FreeType::GetBitmapData(
 #error "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t BITMAP_DATA_OFFSET { 12 };
+#elif __x86_64__
+   const size_t BITMAP_DATA_OFFSET { 16 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
+
 #else
 #error "Define for this platform type!"
 #endif // _WIN32
@@ -508,6 +599,18 @@ int32_t FreeType::GetGlyphTop(
 #else
 #error "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t GLYPH_TOP_OFFSET { 104 };
+#elif __x86_64__
+   const size_t GLYPH_TOP_OFFSET { 148 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
 
 #else
 #error "Define for this platform type!"
@@ -535,6 +638,18 @@ int32_t FreeType::GetGlyphLeft(
 #error "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t GLYPH_LEFT_OFFSET { 100 };
+#elif __x86_64__
+   const size_t GLYPH_LEFT_OFFSET { 144 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
+
 #else
 #error "Define for this platform type!"
 #endif // _WIN32
@@ -560,6 +675,18 @@ double FreeType::GetGlyphAdvance(
 #else
 #error "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t GLYPH_ADVANCE_OFFSET { 64 };
+#elif __x86_64__
+   const size_t GLYPH_ADVANCE_OFFSET { 88 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
 
 #else
 #error "Define for this platform type!"
@@ -587,6 +714,18 @@ uint16_t FreeType::GetFaceUnitsPerEM(
 #error "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t FACE_UNITS_PER_EM_OFFSET { 68 };
+#elif __x86_64__
+   const size_t FACE_UNITS_PER_EM_OFFSET { 104 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
+
 #else
 #error "Define for this platform type!"
 #endif // _WIN32
@@ -613,6 +752,18 @@ int16_t FreeType::GetFaceAscender(
 #error "Define for this platform type!"
 #endif // _M_IX86
 
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t FACE_ASCENDER_OFFSET { 70 };
+#elif __x86_64__
+   const size_t FACE_ASCENDER_OFFSET { 106 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
+
 #else
 #error "Define for this platform type!"
 #endif // _WIN32
@@ -638,6 +789,18 @@ int16_t FreeType::GetFaceDescender(
 #else
 #error "Define for this platform type!"
 #endif // _M_IX86
+
+#elif __linux__
+
+#pragma message "TBD"
+
+#if __i386__
+   const size_t FACE_DESCENDER_OFFSET { 72 };
+#elif __x86_64__
+   const size_t FACE_DESCENDER_OFFSET { 108 };
+#else
+#error "Define for this platform type!"
+#endif // __i386__
 
 #else
 #error "Define for this platform type!"

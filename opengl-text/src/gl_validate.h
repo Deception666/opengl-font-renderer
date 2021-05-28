@@ -13,6 +13,13 @@
 #define VALIDATE_ACTIVE_GL_CONTEXT( ) \
    assert(wglGetCurrentContext()); \
    VALIDATE_NO_GL_ERROR( )
+#elif __linux__
+#define VALIDATE_NO_GL_ERROR( ) \
+   assert(glGetError() == GL_NO_ERROR)
+
+#define VALIDATE_ACTIVE_GL_CONTEXT( ) \
+   assert(glXGetCurrentContext()); \
+   VALIDATE_NO_GL_ERROR( )
 #else
 #error "Define for this platform!"
 #endif // _WIN32
