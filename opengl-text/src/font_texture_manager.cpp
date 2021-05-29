@@ -99,7 +99,7 @@ void AllocateTextureStorage(
       glTexStorage2D(
          GL_TEXTURE_2D,
          max_levels,
-         GL_LUMINANCE,
+         GL_R8,
          width,
          height);
    }

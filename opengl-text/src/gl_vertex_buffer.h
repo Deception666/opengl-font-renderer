@@ -49,7 +49,7 @@ private:
    
    const GLenum usage_;
    
-   void (CALL_CONV * const glGenBuffers) ( GLsizei, GLuint * );
+   void (CALL_CONV * const glCreateBuffers) ( GLsizei, GLuint * );
    void (CALL_CONV * const glDeleteBuffers) ( GLsizei, const GLuint * );
    void (CALL_CONV * const glBindBuffer) ( GLenum, GLuint );
    void (CALL_CONV * const glNamedBufferData) ( GLuint, std::ptrdiff_t, const void *, GLenum );

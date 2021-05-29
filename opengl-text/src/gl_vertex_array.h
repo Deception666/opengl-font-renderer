@@ -54,7 +54,7 @@ public:
 private:
    GLuint vertex_array_;
    
-   void (CALL_CONV * const glGenVertexArrays) ( GLsizei, GLuint * );
+   void (CALL_CONV * const glCreateVertexArrays) ( GLsizei, GLuint * );
    void (CALL_CONV * const glBindVertexArray) ( GLuint );
    void (CALL_CONV * const glDeleteVertexArrays) ( GLsizei, const GLuint * );
    void (CALL_CONV * const glVertexArrayVertexBuffer) ( GLuint, GLuint, GLuint, std::ptrdiff_t, GLsizei );

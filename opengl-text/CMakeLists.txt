@@ -142,7 +142,8 @@ target_link_libraries(
    ${proj_name}
    PRIVATE
    OpenGL::GL
-   $<IF:$<CXX_COMPILER_ID:GNU>,${CMAKE_DL_LIBS},>)
+   $<IF:$<CXX_COMPILER_ID:GNU>,${CMAKE_DL_LIBS},>
+   $<IF:$<CXX_COMPILER_ID:GNU>,OpenGL::GLX,>)
 
 install(
    TARGETS ${proj_name}

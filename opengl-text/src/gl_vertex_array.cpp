@@ -10,7 +10,7 @@ namespace gl {
 
 VertexArray::VertexArray( ) :
 vertex_array_ { },
-glGenVertexArrays { GetProcAddress("glGenVertexArrays", glGenVertexArrays) },
+glCreateVertexArrays { GetProcAddress("glCreateVertexArrays", glCreateVertexArrays) },
 glBindVertexArray { GetProcAddress("glBindVertexArray", glBindVertexArray) },
 glDeleteVertexArrays { GetProcAddress("glDeleteVertexArrays", glDeleteVertexArrays) },
 glVertexArrayVertexBuffer { GetProcAddress("glVertexArrayVertexBuffer", glVertexArrayVertexBuffer) },
@@ -21,7 +21,7 @@ glVertexArrayAttribBinding { GetProcAddress("glVertexArrayAttribBinding", glVert
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-   if (!glGenVertexArrays || !glBindVertexArray ||
+   if (!glCreateVertexArrays || !glBindVertexArray ||
        !glDeleteVertexArrays || !glVertexArrayVertexBuffer ||
        !glEnableVertexArrayAttrib || !glDisableVertexArrayAttrib ||
        !glVertexArrayAttribFormat || !glVertexArrayAttribBinding)
@@ -31,7 +31,7 @@ glVertexArrayAttribBinding { GetProcAddress("glVertexArrayAttribBinding", glVert
             "Not all gl buffer entry points defined!");
    }
 
-   glGenVertexArrays(
+   glCreateVertexArrays(
       1,
       &vertex_array_);
 

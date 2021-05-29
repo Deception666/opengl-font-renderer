@@ -15,7 +15,7 @@ vertex_buffer_ { },
 size_ { },
 max_size_ { },
 usage_ { usage },
-glGenBuffers { GetProcAddress("glGenBuffers", glGenBuffers) },
+glCreateBuffers { GetProcAddress("glCreateBuffers", glCreateBuffers) },
 glDeleteBuffers { GetProcAddress("glDeleteBuffers", glDeleteBuffers) },
 glBindBuffer { GetProcAddress("glBindBuffer", glBindBuffer) },
 glNamedBufferData { GetProcAddress("glNamedBufferData", glNamedBufferData) },
@@ -23,7 +23,7 @@ glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubDa
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-   if (!glGenBuffers || !glDeleteBuffers ||
+   if (!glCreateBuffers || !glDeleteBuffers ||
        !glBindBuffer || !glNamedBufferData ||
        !glNamedBufferSubData)
    {
@@ -32,7 +32,7 @@ glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubDa
             "Not all gl buffer entry points defined!");
    }
 
-   glGenBuffers(
+   glCreateBuffers(
       1,
       &vertex_buffer_);
 
@@ -45,7 +45,7 @@ glNamedBufferSubData { GetProcAddress("glNamedBufferSubData", glNamedBufferSubDa
 
    glNamedBufferData(
       vertex_buffer_,
-      0,
+      size_,
       nullptr,
       usage_);
 

@@ -16,7 +16,7 @@ active_block_index_ { GL_INVALID_INDEX },
 size_ { },
 max_size_ { },
 usage_ { usage },
-glGenBuffers { GetProcAddress("glGenBuffers", glGenBuffers) },
+glCreateBuffers { GetProcAddress("glCreateBuffers", glCreateBuffers) },
 glDeleteBuffers { GetProcAddress("glDeleteBuffers", glDeleteBuffers) },
 glBindBuffer { GetProcAddress("glBindBuffer", glBindBuffer) },
 glNamedBufferData { GetProcAddress("glNamedBufferData", glNamedBufferData) },
@@ -25,7 +25,7 @@ glBindBufferBase { GetProcAddress("glBindBufferBase", glBindBufferBase) }
 {
    VALIDATE_ACTIVE_GL_CONTEXT();
 
-   if (!glGenBuffers || !glDeleteBuffers ||
+   if (!glCreateBuffers || !glDeleteBuffers ||
        !glBindBuffer || !glNamedBufferData ||
        !glNamedBufferSubData || !glBindBufferBase)
    {
@@ -34,7 +34,7 @@ glBindBufferBase { GetProcAddress("glBindBufferBase", glBindBufferBase) }
             "Not all gl uniform buffer entry points defined!");
    }
 
-   glGenBuffers(
+   glCreateBuffers(
       1,
       &uniform_buffer_);
 
@@ -47,7 +47,7 @@ glBindBufferBase { GetProcAddress("glBindBufferBase", glBindBufferBase) }
 
    glNamedBufferData(
       uniform_buffer_,
-      0,
+      size_,
       nullptr,
       usage_);
 

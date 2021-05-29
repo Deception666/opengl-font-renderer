@@ -93,6 +93,10 @@
 #define GL_CLAMP_TO_BORDER       0x812D
 #endif
 
+#ifndef GL_R8
+#define GL_R8                    0x8229
+#endif
+
 #ifndef GL_NUM_EXTENSIONS
 #define GL_NUM_EXTENSIONS        0x821D
 #endif
