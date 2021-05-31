@@ -2,6 +2,10 @@
 #include "error_reporting_private.h"
 
 #include <algorithm>
+#if __linux__
+#include <cstdlib>
+#include <filesystem>
+#endif
 #include <stdexcept>
 #include <utility>
 
@@ -55,14 +59,12 @@ T GetBitmapData(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t glyph_offset { 84 };
    const size_t bitmap_offset { 76 };
 #elif __x86_64__
-   const size_t glyph_offset { 120 };
-   const size_t bitmap_offset { 104 };
+   const size_t glyph_offset { 152 };
+   const size_t bitmap_offset { 152 };
 #else
 #define "Define for this platform type!"
 #endif // __i386__ 
@@ -98,12 +100,10 @@ T GetGlyphData(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t glyph_offset { 84 };
 #elif __x86_64__
-   const size_t glyph_offset { 120 };
+   const size_t glyph_offset { 152 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -142,9 +142,12 @@ FreeType::Create( ) noexcept
    std::shared_ptr< FreeType >
       instance;
 
-#if _WIN32
+#if _WIN32 || __linux__
 
    const char * const module_name =
+
+#if _WIN32
+
 #ifdef NDEBUG
       "freetype.dll";
 #else
@@ -155,33 +158,56 @@ FreeType::Create( ) noexcept
       LoadLibrary(
          module_name);
 
-   if (module)
+#elif __linux__
+
+#ifdef NDEBUG
+      "libfreetype.so.6";
+#else
+      "libfreetype.so.6";
+#endif
+
+   const auto module =
+      dlopen(
+         module_name,
+         RTLD_NOW);
+
+#endif
+
+   try
    {
-      try
+      if (!module)
+      {
+         throw
+            std::runtime_error {
+               "Unable to open freetype library " +
+               std::string { module_name } };
+      }
+      else
       {
          instance.reset(
-            new FreeType(
+            new FreeType {
                FT_Module {
                   module,
                   [ ] (
                      void * const module )
                   {
+#if _WIN32
                      FreeLibrary(
                         static_cast< HMODULE >(
                            module));
+#elif __linux__
+                     dlclose(
+                        module);
+#endif
                   }
-               }));
-      }
-      catch (const std::exception & e)
-      {
-         ReportError(
-            e.what());
+               }});
       }
    }
-
-#elif __linux__
-
-#pragma message "TBD"
+   catch (const std::exception & e)
+   {
+      ReportError(
+         e.what());
+   }
 
 #else
 
@@ -200,7 +226,42 @@ std::string ConstructFontPath(
 {
    std::string font_abs_path;
 
-   #pragma message "TBD"
+   const auto home_dir =
+      std::getenv(
+         "HOME");
+
+   const std::string root_dirs[] {
+      home_dir ?
+         std::string { home_dir } + "/.fonts" :
+         std::string { },
+      "/usr/local/share/fonts",
+      "/usr/share/fonts"
+   };
+
+   for (const auto root_dir : root_dirs)
+   {
+      try
+      {
+         for (const auto & dir_entry :
+              std::filesystem::recursive_directory_iterator(
+                 root_dir))
+         {
+               if (dir_entry.is_regular_file() &&
+                   dir_entry.path().filename() == font_filename)
+               {
+                  font_abs_path =
+                     dir_entry.path();
+
+                  break;
+               }
+         }
+      }
+      catch (const std::exception & e)
+      {
+         ReportError(
+            e.what());
+      }
+   }
 
    return font_abs_path;
 }
@@ -438,7 +499,7 @@ face_ { nullptr, delete_face_ }
 
    // assume that versions greater than the one
    // specified below are compatible with this impl
-   if (version < 0x00020A04)
+   if (version < 0x00020A00)
    {
       throw
          std::runtime_error {
@@ -488,8 +549,6 @@ uint32_t FreeType::GetBitmapWidth(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t BITMAP_WIDTH_OFFSET { 4 };
 #elif __x86_64__
@@ -525,8 +584,6 @@ uint32_t FreeType::GetBitmapHeight(
 #endif // _M_IX86
 
 #elif __linux__
-
-#pragma message "TBD"
 
 #if __i386__
    const size_t BITMAP_HEIGHT_OFFSET { 0 };
@@ -564,8 +621,6 @@ const uint8_t * FreeType::GetBitmapData(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t BITMAP_DATA_OFFSET { 12 };
 #elif __x86_64__
@@ -602,12 +657,10 @@ int32_t FreeType::GetGlyphTop(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t GLYPH_TOP_OFFSET { 104 };
 #elif __x86_64__
-   const size_t GLYPH_TOP_OFFSET { 148 };
+   const size_t GLYPH_TOP_OFFSET { 196 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -640,12 +693,10 @@ int32_t FreeType::GetGlyphLeft(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t GLYPH_LEFT_OFFSET { 100 };
 #elif __x86_64__
-   const size_t GLYPH_LEFT_OFFSET { 144 };
+   const size_t GLYPH_LEFT_OFFSET { 192 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -678,12 +729,10 @@ double FreeType::GetGlyphAdvance(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t GLYPH_ADVANCE_OFFSET { 64 };
 #elif __x86_64__
-   const size_t GLYPH_ADVANCE_OFFSET { 88 };
+   const size_t GLYPH_ADVANCE_OFFSET { 128 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -716,12 +765,10 @@ uint16_t FreeType::GetFaceUnitsPerEM(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t FACE_UNITS_PER_EM_OFFSET { 68 };
 #elif __x86_64__
-   const size_t FACE_UNITS_PER_EM_OFFSET { 104 };
+   const size_t FACE_UNITS_PER_EM_OFFSET { 136 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -754,12 +801,10 @@ int16_t FreeType::GetFaceAscender(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t FACE_ASCENDER_OFFSET { 70 };
 #elif __x86_64__
-   const size_t FACE_ASCENDER_OFFSET { 106 };
+   const size_t FACE_ASCENDER_OFFSET { 138 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__
@@ -792,12 +837,10 @@ int16_t FreeType::GetFaceDescender(
 
 #elif __linux__
 
-#pragma message "TBD"
-
 #if __i386__
    const size_t FACE_DESCENDER_OFFSET { 72 };
 #elif __x86_64__
-   const size_t FACE_DESCENDER_OFFSET { 108 };
+   const size_t FACE_DESCENDER_OFFSET { 140 };
 #else
 #error "Define for this platform type!"
 #endif // __i386__

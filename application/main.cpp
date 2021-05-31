@@ -14,8 +14,8 @@
 #include <QtGui/QKeyEvent>
 #include <QtGui/QImageWriter>
 
-// #include <ft2build.h>
-// #include <freetype/freetype.h>
+//#include <freetype2/ft2build.h>
+//#include <freetype/freetype.h>
 
 #include "opengl-text/text.h"
 #include "opengl-text/error_reporting.h"
@@ -33,6 +33,7 @@ std::unique_ptr< opengl::Text > text3;
 void font_test( )
 {
 
+#if _WIN32
    const char * const fonts[] {
       "arial.ttf",
       "itcedscr.ttf",
@@ -44,6 +45,20 @@ void font_test( )
       "bkant.ttf",
       "wingding.ttf"
    };
+#elif __linux__
+   const char * const fonts[] {
+      "DejaVuSans.ttf",
+      "ani.ttf",
+      "D050000L.otf",
+      "Karumbi-Regular.ttf",
+      "NimbusMonoPS-Regular.t1",
+      "DroidSansFallbackFull.ttf",
+      "Purisa.ttf",
+      "NotoColorEmoji.ttf",
+      "Chilanka-Regular.otf",
+      "c0419bt_.pfb"
+   };
+#endif
 
    size_t index =
       std::clamp(
@@ -148,7 +163,7 @@ public:
       else if (!event->text().isEmpty() &&
                '0' <= event->text().at(0) &&
                event->text().at(0) <= '9' &&
-               event->modifiers() & Qt::KeyboardModifier::ControlModifier)
+               event->modifiers() & Qt::KeyboardModifier::AltModifier)
       {
          font_index =
             event->text().toInt();
@@ -300,6 +315,7 @@ void OpenGLWidget::paintGL( )
    std::string s {
       "scale: " + std::to_string(scale) + "\n"
       "size: " + std::to_string(::size) + "\n"
+      "name: " + text->GetFont() + "\n"
       + std::to_string(text->GetBoundingBox().GetWidth()) + "\n"
       + std::to_string(text->GetBoundingBox().GetHeight()) + "\n"
       + string
