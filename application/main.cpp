@@ -20,6 +20,9 @@
 #include "opengl-text/text.h"
 #include "opengl-text/error_reporting.h"
 
+//#include "src/font_engine_freetype.h"
+//#include "src/font_engine_type.h"
+
 float scale { 1.0f };
 uint32_t size { 48 };
 size_t font_index { 0 };
@@ -30,8 +33,119 @@ std::unique_ptr< opengl::Text > text;
 std::unique_ptr< opengl::Text > text2;
 std::unique_ptr< opengl::Text > text3;
 
+//void write_data( )
+//{
+//   opengl::FontEngineFreeType freetype_font_engine;
+//   freetype_font_engine.Initialize();
+//   freetype_font_engine.SetFont("DejaVuSans.ttf");
+//   freetype_font_engine.SetSize(104);
+//
+//   std::ofstream o2;
+//
+//   o2.open(
+//      "metrics.txt",
+//      std::ios_base::out |
+//      std::ios_base::trunc);
+//   
+//   char default_char_set_[127 - 32] { };
+//   std::iota(
+//      std::begin(default_char_set_),
+//      std::end(default_char_set_),
+//      32);
+//
+//   for (const auto c : default_char_set_)
+//   {
+//      const auto metric =
+//         freetype_font_engine.GetGlyphMetric(c);
+//
+//      o2
+//         << "{ "
+//         << metric->width << ", "
+//         << metric->height << ", "
+//         << metric->top << ", "
+//         << metric->left << ", "
+//         << metric->advance << ", "
+//         << "{ { "
+//         << metric->tex_coords.absolute.top << ", "
+//         << metric->tex_coords.absolute.bottom << ", "
+//         << metric->tex_coords.absolute.left << ", "
+//         << metric->tex_coords.absolute.right
+//         << " }, "
+//         << "{ "
+//         << std::setprecision(10)
+//         << metric->tex_coords.normalized.top << "f, "
+//         << metric->tex_coords.normalized.bottom << "f, "
+//         << metric->tex_coords.normalized.left << "f, "
+//         << metric->tex_coords.normalized.right << "f"
+//         << " } } },\n";
+//   }
+//
+//   o2
+//      << "VA: " << freetype_font_engine.GetVerticalAdvance() << "\n"
+//      << "MH: " << freetype_font_engine.GetGlyphMaxHeight() << "\n"
+//      << "MW: " << freetype_font_engine.GetGlyphMaxWidth() << "\n"
+//      << "MT: " << freetype_font_engine.GetGlyphMaxTop() << "\n"
+//      << "SZ: " << freetype_font_engine.GetSize() << "\n\n";
+//
+//   std::ofstream o;
+//
+//   o.open(
+//      "texture.txt",
+//      std::ios_base::out |
+//      std::ios_base::trunc);
+//
+//   o
+//      << std::hex
+//      << std::uppercase
+//      << std::internal/*
+//      << std::setw(2)
+//      << std::setfill('0')*/;
+//
+//   const auto texture_map =
+//      freetype_font_engine.GetGlyphTextureMap();
+//   
+//   const auto map =
+//      texture_map.texture_map.lock();
+//
+//   for (uint32_t h { }; texture_map.height > h; ++h)
+//   {
+//      for (uint32_t r { }; texture_map.width > r; ++r)
+//      {
+//         o
+//            << "0x"
+//            << std::setw(2)
+//            << std::setfill('0')
+//            << static_cast< uint32_t >(
+//               *(map.get() + (texture_map.width * h + r)))
+//            << ", ";
+//      }
+//
+//      o << "\n";
+//   }
+//
+//   QImage image {
+//      static_cast< int32_t >(texture_map.width),
+//      static_cast< int32_t >(texture_map.height),
+//      QImage::Format::Format_Grayscale8
+//   };
+//
+//   std::copy(
+//      map.get(),
+//      map.get() + texture_map.width * texture_map.height,
+//      image.bits());
+//
+//   QImageWriter image_writer {
+//      "image.png"
+//   };
+//
+//   image_writer.write(
+//      image);
+//}
+
 void font_test( )
 {
+
+   //write_data();
 
 #if _WIN32
    const char * const fonts[] {
