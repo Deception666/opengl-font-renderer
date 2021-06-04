@@ -18,7 +18,6 @@ set(
    src/font_engine_factory.h
    src/font_engine_freetype.cpp
    src/font_engine_freetype.h
-   src/font_engine_type.h
    src/font_texture_manager.cpp
    src/font_texture_manager.h
    src/freetype.cpp
@@ -73,6 +72,7 @@ set(
    includes
    opengl-text/bounding_box.h
    opengl-text/error_reporting.h
+   opengl-text/font_engine_type.h
    opengl-text/library_export.h
    opengl-text/text.h)
 
