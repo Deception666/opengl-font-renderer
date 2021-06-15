@@ -8,9 +8,18 @@ set(
 add_executable(
    ${proj_name}
    main.cpp
-   qt.conf)
+   scene.h
+   qt.conf
+   word_processor_scene.cpp
+   word_processor_scene.h)
 
 if (MSVC)
+   target_compile_definitions(
+      ${proj_name}
+      PRIVATE
+      NOMINMAX
+      WIN32_LEAN_AND_MEAN)
+
    target_compile_options(
       ${proj_name}
       PRIVATE
@@ -25,7 +34,8 @@ endif ( )
 set_target_properties(
    ${proj_name}
    PROPERTIES
-   DEBUG_POSTFIX "-d")
+   DEBUG_POSTFIX "-d"
+   AUTOMOC yes)
 
 find_package(
    Qt5
