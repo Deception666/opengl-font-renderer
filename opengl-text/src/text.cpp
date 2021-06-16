@@ -133,6 +133,7 @@ bool Text::SetFont(
    if (font_engine_)
    {
       set =
+         font_engine_->GetFont() != font_filename &&
          font_engine_->SetFont(
             font_filename);
 
@@ -155,6 +156,8 @@ bool Text::SetFont(
    if (font_engine_)
    {
       set =
+         (font_engine_->GetFont() != font_filename ||
+         font_engine_->GetSize() != size) &&
          font_engine_->SetFont(
             font_filename,
             size);
@@ -185,6 +188,7 @@ bool Text::SetFontSize(
    if (font_engine_)
    {
       set =
+         font_engine_->GetSize() != size &&
          font_engine_->SetSize(
             size);
 

@@ -46,6 +46,8 @@ public:
 private:
    bool RepositionText( ) noexcept;
 
+   bool TextAttributesUpdated( ) noexcept;
+
    std::unique_ptr< opengl::Text >
       text_;
 

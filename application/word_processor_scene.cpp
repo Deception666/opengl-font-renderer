@@ -44,10 +44,7 @@ bool WordProcessorScene::Initialize( ) noexcept
       text_ =
          std::make_unique< opengl::Text >();
 
-      text_->SetText(
-         "Font: " + text_->GetFont() + "\n"
-         "Size: " + std::to_string(text_->GetFontSize()) + "\n"
-         "Scale: " + std::to_string(text_->GetScale()) + "\n");
+      TextAttributesUpdated();
    }
    catch (const std::exception &)
    {
@@ -68,30 +65,8 @@ bool WordProcessorScene::SetFont(
       set =
          text_->SetFont(
             font_filename,
-            font_size);
-
-      if (set)
-      {
-         const auto & text =
-            text_->GetText();
-
-         const std::regex regex {
-            R"((?:.*\n){3}((?:.|\n)*))"
-         };
-
-         std::smatch matches;
-
-         std::regex_match(
-            text,
-            matches,
-            regex);
-
-         text_->SetText(
-            "Font: " + text_->GetFont() + "\n"
-            "Size: " + std::to_string(text_->GetFontSize()) + "\n"
-            "Scale: " + std::to_string(text_->GetScale()) + "\n" +
-            (!matches.empty() ? matches[1].str() : std::string { }));
-      }
+            font_size) &&
+         TextAttributesUpdated();
    }
 
    return set;
@@ -137,29 +112,28 @@ bool WordProcessorScene::KeyPressed(
           (event.key() == Qt::Key::Key_BracketLeft ||
            event.key() == Qt::Key::Key_BracketRight))
       {
+         float scale {
+            text_->GetScale()
+         };
+
          if (event.key() == Qt::Key::Key_BracketLeft)
          {
-            const float scale =
-               std::max(
-                  text_->GetScale() - 0.025f,
-                  0.025f);
-
-            handled =
-               text_->SetScale(
-                  scale);
+            scale -= 0.025f;
          }
          else
          {
-            handled =
-               text_->SetScale(
-                  text_->GetScale() + 0.025f);
+            scale += 0.025f;
          }
+
+         handled =
+            text_->SetScale(
+               std::max(
+                  scale,
+                  0.025f));
 
          if (handled)
          {
-            SetFont(
-               text_->GetFont().c_str(),
-               text_->GetFontSize());
+            TextAttributesUpdated();
          }
       }
       else if ((event.modifiers() & Qt::KeyboardModifier::ControlModifier) ==
@@ -287,4 +261,36 @@ bool WordProcessorScene::RepositionText( ) noexcept
    }
 
    return set;
+}
+
+bool WordProcessorScene::TextAttributesUpdated( ) noexcept
+{
+   bool updated { false };
+
+   if (text_)
+   {
+      const auto & text =
+         text_->GetText();
+
+      const std::regex regex {
+         R"((?:.*\n){3}((?:.|\n)*))"
+      };
+
+      std::smatch matches;
+
+      std::regex_match(
+         text,
+         matches,
+         regex);
+
+      updated =
+         text_->SetText(
+            "Font: " + text_->GetFont() + "\n"
+            "Size: " + std::to_string(text_->GetFontSize()) + "\n"
+            "Scale: " + std::to_string(text_->GetScale()) + "\n" +
+            (!matches.empty() ? matches[1].str() : std::string { }));
+   }
+
+   return
+      updated;
 }
